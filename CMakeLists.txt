@@ -536,6 +536,8 @@ if(NOT CLANG_TIDY)
     add_subdirectory(test)
     message("Jigao Project: google test is included")
     add_subdirectory(google_test)
+    message("Jigao Project: google benchmark is included")
+    add_subdirectory(google_benchmark)
     if(NOT WIN32
       AND NOT SUN
       AND ${BUILD_BENCHMARKS})
