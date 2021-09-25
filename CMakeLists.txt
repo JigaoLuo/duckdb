@@ -534,6 +534,8 @@ add_subdirectory(extension)
 if(NOT CLANG_TIDY)
   if(${BUILD_UNITTESTS})
     add_subdirectory(test)
+    message("Jigao Project: google test is included")
+    add_subdirectory(google_test)
     if(NOT WIN32
       AND NOT SUN
       AND ${BUILD_BENCHMARKS})
