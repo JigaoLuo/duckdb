@@ -101,10 +101,12 @@ public:
 	//! Search Equal used for Joins that do not need to fetch data
 	void SearchEqualJoinNoFetch(Value &equal_value, idx_t &result_size);
 
-private:
+    // Commit this out for Jigao's Gtests.
+    //private:
 	DataChunk expression_result;
 
-private:
+    // Commit this out for Jigao's Gtests.
+    //private:
 	//! Insert a row id into a leaf node
 	bool InsertToLeaf(Leaf &leaf, row_t row_id);
 	//! Insert the leaf value into the tree
@@ -130,7 +132,8 @@ private:
 	bool SearchCloseRange(ARTIndexScanState *state, bool left_inclusive, bool right_inclusive, idx_t max_count,
 	                      vector<row_t> &result_ids);
 
-private:
+    // Commit this out for Jigao's Gtests.
+    //private:
 	template <bool HAS_BOUND, bool INCLUSIVE>
 	bool IteratorScan(ARTIndexScanState *state, Iterator *it, Key *upper_bound, idx_t max_count,
 	                  vector<row_t> &result_ids);

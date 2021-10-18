@@ -11,6 +11,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+
 add_executable(
         hello_test
         test.cpp
@@ -19,6 +20,9 @@ add_executable(
 target_link_libraries(
         hello_test
         gtest_main
+        ${DUCKDB_LINK_LIBS}
+        duckdb_static
+        duckdb_art_index_execution
 )
 
 include(GoogleTest)
