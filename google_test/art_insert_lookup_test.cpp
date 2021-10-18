@@ -5,11 +5,12 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <set>
 
 namespace {
 using namespace duckdb;
 
-class ARTTest : public ::testing::Test {
+class INT32_ARTTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Check: src/include/duckdb/planner/operator/logical_create_index.hpp
@@ -66,24 +67,111 @@ protected:
     vector<unique_ptr<Key>> not_in_art_keys;
 };
 
-TEST_F(ARTTest, EasyARTTest) {
+TEST_F(INT32_ARTTest, EasyARTTest) {
 	// Prepare the input data.
     in_art_input_data = {0,1,2,3,4,5,6,7,8,9};
     not_in_art_input_data = {10,11,12,13,14};
 
-	// Check the input data.
+    // Build tree & Check the input data.
     InsertInputData();
 	LookupInputData();
 }
 
-TEST_F(ARTTest, AnotherEasyARTTest) {
+TEST_F(INT32_ARTTest, AnotherEasyARTTest) {
     // Prepare the input data.
     in_art_input_data = {10,11,12,13,14};
     not_in_art_input_data = {0,1,2,3,4,5,6,7,8,9};
 
-    // Check the input data.
+    // Build tree & Check the input data.
     InsertInputData();
     LookupInputData();
 }
 
+TEST_F(INT32_ARTTest, SortedDenseKeys_1K) {
+    // Prepare the input data.
+    constexpr int32_t num_keys = 1000;
+    in_art_input_data.reserve(num_keys);
+	for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
+
+    // Build tree & Check the input data.
+    InsertInputData();
+    LookupInputData();
+}
+
+TEST_F(INT32_ARTTest, SortedDenseKeys_1M) {
+    // Prepare the input data.
+    constexpr int32_t num_keys = 1000000;
+    in_art_input_data.reserve(num_keys);
+    for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
+
+    // Build tree & Check the input data.
+    InsertInputData();
+    LookupInputData();
+}
+
+TEST_F(INT32_ARTTest, RandomDenseKeys_1K) {
+    // Prepare the input data.
+    constexpr int32_t num_keys = 1000;
+    in_art_input_data.reserve(num_keys);
+    for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
+    std::random_shuffle(in_art_input_data.begin(), in_art_input_data.end());
+
+    // Build tree & Check the input data.
+    InsertInputData();
+    LookupInputData();
+}
+
+TEST_F(INT32_ARTTest, RandomDenseKeys_1M) {
+    // Prepare the input data.
+    constexpr int32_t num_keys = 1000000;
+    in_art_input_data.reserve(num_keys);
+    for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
+    std::random_shuffle(in_art_input_data.begin(), in_art_input_data.end());
+
+    // Build tree & Check the input data.
+    InsertInputData();
+    LookupInputData();
+}
+
+TEST_F(INT32_ARTTest, SparseUniqueKeys_1K) {
+    // Prepare the input data.
+    constexpr int32_t num_keys = 1000;
+    in_art_input_data.resize(num_keys);
+    {
+        int32_t count = 0;
+        std::set<int32_t> keySet;
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist(1, std::numeric_limits<int32_t>::max());
+        while (count < num_keys) {
+            in_art_input_data[count] = dist(rng);
+            if (!keySet.count(in_art_input_data[count])) keySet.insert(in_art_input_data[count++]);
+        }
+    }
+
+    // Build tree & Check the input data.
+    InsertInputData();
+    LookupInputData();
+}
+
+TEST_F(INT32_ARTTest, SparseUniqueKeys_1M) {
+    // Prepare the input data.
+    constexpr int32_t num_keys = 1000000;
+    in_art_input_data.resize(num_keys);
+    {
+        int32_t count = 0;
+        std::set<int32_t> keySet;
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist(1, std::numeric_limits<int32_t>::max());
+        while (count < num_keys) {
+            in_art_input_data[count] = dist(rng);
+            if (!keySet.count(in_art_input_data[count])) keySet.insert(in_art_input_data[count++]);
+        }
+    }
+
+    // Build tree & Check the input data.
+    InsertInputData();
+    LookupInputData();
+}
 }  // namespace
