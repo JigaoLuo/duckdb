@@ -13,17 +13,15 @@ enable_testing()
 
 
 add_executable(
-        hello_test
-        test.cpp
+        art_test
+        art_insert_lookup_test.cpp
         ${ALL_OBJECT_FILES}
 )
 target_link_libraries(
-        hello_test
+        art_test
         gtest_main
-        ${DUCKDB_LINK_LIBS}
-        duckdb_static
-        duckdb_art_index_execution
+        duckdb
 )
 
 include(GoogleTest)
-gtest_discover_tests(hello_test)
+gtest_discover_tests(art_test)
