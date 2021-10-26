@@ -34,6 +34,19 @@ public:
     void TearDown(const ::benchmark::State& state) {}
 
     void GenerateSortedDenseKeys() {
+        insert_keys.clear();
+        // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
+        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+            insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
+        }
+    }
+
+    void GenerateRandomDenseKeys() {
+		if (!if_shuffled) {
+            std::random_shuffle(in_art_input_data.begin(), in_art_input_data.end());
+        }
+
+        insert_keys.clear();
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
         for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
             insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
@@ -41,7 +54,10 @@ public:
     }
 
 	void Insert() {
-        insert_keys.clear();
+        vector<column_t> column_ids;
+        vector<unique_ptr<Expression>> unbound_expressions;
+        index = make_unique<ART>(column_ids, unbound_expressions, false);
+
         // Check: src/execution/index/art/art.cpp bool ART::Insert(IndexLock &lock, DataChunk &input, Vector &row_ids)
         // now insert the elements into the index
         for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
@@ -64,14 +80,17 @@ public:
     vector<int32_t> in_art_input_data;
     vector<unique_ptr<Key>> insert_keys;
     vector<unique_ptr<Key>> in_art_keys;
+
+	bool if_shuffled = false;
 };
 
 BENCHMARK_DEFINE_F(INT32_ART_Fixture, SortedDenseKeys_Insert_Test)(benchmark::State& state) {
 	for (auto _ : state) {
-        state.PauseTiming();
-        GenerateSortedDenseKeys();
-        state.ResumeTiming();
-
+		{
+			state.PauseTiming();
+			GenerateSortedDenseKeys();
+			state.ResumeTiming();
+		}
         Insert();
     }
 }
@@ -80,15 +99,45 @@ BENCHMARK_REGISTER_F(INT32_ART_Fixture, SortedDenseKeys_Insert_Test)->Arg(1000)-
 
 BENCHMARK_DEFINE_F(INT32_ART_Fixture, SortedDenseKeys_Lookup_Test)(benchmark::State& state) {
     for (auto _ : state) {
-        state.PauseTiming();
-        GenerateSortedDenseKeys();
-        Insert();
-        state.ResumeTiming();
-
+        {
+            state.PauseTiming();
+            GenerateSortedDenseKeys();
+            Insert();
+            state.ResumeTiming();
+        }
         Lookup();
     }
 }
 BENCHMARK_REGISTER_F(INT32_ART_Fixture, SortedDenseKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
+
+
+BENCHMARK_DEFINE_F(INT32_ART_Fixture, RandomDenseKeys_Insert_Test)(benchmark::State& state) {
+    for (auto _ : state) {
+        {
+            state.PauseTiming();
+            GenerateRandomDenseKeys();
+            state.ResumeTiming();
+        }
+        Insert();
+    }
+}
+
+BENCHMARK_REGISTER_F(INT32_ART_Fixture, RandomDenseKeys_Insert_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
+
+BENCHMARK_DEFINE_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)(benchmark::State& state) {
+    for (auto _ : state) {
+        {
+            state.PauseTiming();
+            GenerateRandomDenseKeys();
+            Insert();
+            state.ResumeTiming();
+        }
+        Lookup();
+    }
+}
+BENCHMARK_REGISTER_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
+
+
 
 BENCHMARK_MAIN();
 
