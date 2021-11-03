@@ -21,12 +21,12 @@ public:
         // Check: src/execution/operator/schema/physical_create_index.cpp
         index = make_unique<ART>(column_ids, unbound_expressions, false);
 
-        const int32_t num_keys = state.range(0);
+        num_keys = state.range(0);
         in_art_input_data.reserve(num_keys);
         for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
 
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
-        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+        for (idx_t idx = 0; idx < num_keys; ++idx) {
             in_art_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
         }
     }
@@ -36,7 +36,7 @@ public:
     void GenerateSortedDenseKeys() {
         insert_keys.clear();
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
-        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+        for (idx_t idx = 0; idx < num_keys; ++idx) {
             insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
         }
     }
@@ -49,7 +49,7 @@ public:
 
         insert_keys.clear();
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
-        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+        for (idx_t idx = 0; idx < num_keys; ++idx) {
             insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
         }
     }
@@ -61,7 +61,7 @@ public:
 
         // Check: src/execution/index/art/art.cpp bool ART::Insert(IndexLock &lock, DataChunk &input, Vector &row_ids)
         // now insert the elements into the index
-        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+        for (idx_t idx = 0; idx < num_keys; ++idx) {
             row_t row_id = idx;
             bool insert_result = index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
         }
@@ -69,11 +69,13 @@ public:
 
 	void Lookup() {
         // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+        for (idx_t idx = 0; idx < num_keys; ++idx) {
             auto leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
         }
 	}
 
+    int32_t num_keys = 0;
+    bool if_shuffled = false;
     unique_ptr<ART> index;
 
     // Check: src/execution/index/art/art.cpp void ART::GenerateKeys(DataChunk &input, vector<unique_ptr<Key>> &insert_keys)
@@ -81,8 +83,6 @@ public:
     vector<int32_t> in_art_input_data;
     vector<unique_ptr<Key>> insert_keys;
     vector<unique_ptr<Key>> in_art_keys;
-
-	bool if_shuffled = false;
 };
 
 BENCHMARK_DEFINE_F(INT32_ART_Fixture, SortedDenseKeys_Insert_Test)(benchmark::State& state) {
