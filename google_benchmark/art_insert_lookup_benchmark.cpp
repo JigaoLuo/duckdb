@@ -54,6 +54,27 @@ public:
         }
     }
 
+    void GenerateSparseUniqueKeys() {
+        {
+            /// create sparse, unique keys.
+            int32_t count = 0;
+            std::set<int32_t> keySet;
+            std::random_device dev;
+            std::mt19937 rng(dev());
+            std::uniform_int_distribution<std::mt19937::result_type> dist(1, std::numeric_limits<int32_t>::max());
+            while (count < num_keys) {
+                in_art_input_data[count] = dist(rng);
+                if (!keySet.count(in_art_input_data[count])) keySet.insert(in_art_input_data[count++]);
+            }
+        }
+
+        insert_keys.clear();
+        // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
+        for (idx_t idx = 0; idx < num_keys; ++idx) {
+            insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
+        }
+    }
+
 	void Insert() {
         vector<column_t> column_ids;
         vector<unique_ptr<Expression>> unbound_expressions;
@@ -138,7 +159,18 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)(benchmark::St
 }
 BENCHMARK_REGISTER_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
 
-
+BENCHMARK_DEFINE_F(INT32_ART_Fixture, SparseUniqueKeys_Lookup_Test)(benchmark::State& state) {
+    for (auto _ : state) {
+        {
+            state.PauseTiming();
+            GenerateSparseUniqueKeys();
+            Insert();
+            state.ResumeTiming();
+        }
+        Lookup();
+    }
+}
+BENCHMARK_REGISTER_F(INT32_ART_Fixture, SparseUniqueKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();
 
