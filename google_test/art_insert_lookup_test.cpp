@@ -138,6 +138,7 @@ TEST_F(INT32_ARTTest, SparseUniqueKeys_1K) {
     constexpr int32_t num_keys = 1000;
     in_art_input_data.resize(num_keys);
     {
+        /// create sparse, unique keys.
         int32_t count = 0;
         std::set<int32_t> keySet;
         std::random_device dev;
@@ -159,6 +160,7 @@ TEST_F(INT32_ARTTest, SparseUniqueKeys_1M) {
     constexpr int32_t num_keys = 1000000;
     in_art_input_data.resize(num_keys);
     {
+        /// create sparse, unique keys.
         int32_t count = 0;
         std::set<int32_t> keySet;
         std::random_device dev;

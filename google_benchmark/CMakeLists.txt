@@ -11,12 +11,13 @@ FetchContent_MakeAvailable(googlebenchmark)
 find_package(benchmark REQUIRED)
 
 add_executable(
-        hello_benchmark
-        test.cpp
+        art_benchmark
+        art_insert_lookup_benchmark.cpp
         ${ALL_OBJECT_FILES}
 )
 target_link_libraries(
-        hello_benchmark
+        art_benchmark
         benchmark::benchmark
+        duckdb
 )
 
