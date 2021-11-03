@@ -42,6 +42,7 @@ public:
     }
 
     void GenerateRandomDenseKeys() {
+		/// Random Dense Keys == Shuffle Dense Key
 		if (!if_shuffled) {
             std::random_shuffle(in_art_input_data.begin(), in_art_input_data.end());
         }
