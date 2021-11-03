@@ -159,6 +159,19 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)(benchmark::St
 }
 BENCHMARK_REGISTER_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
 
+BENCHMARK_DEFINE_F(INT32_ART_Fixture, SparseUniqueKeys_Insert_Test)(benchmark::State& state) {
+    for (auto _ : state) {
+        {
+            state.PauseTiming();
+            GenerateSparseUniqueKeys();
+            state.ResumeTiming();
+        }
+        Insert();
+    }
+}
+
+BENCHMARK_REGISTER_F(INT32_ART_Fixture, SparseUniqueKeys_Insert_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
+
 BENCHMARK_DEFINE_F(INT32_ART_Fixture, SparseUniqueKeys_Lookup_Test)(benchmark::State& state) {
     for (auto _ : state) {
         {
