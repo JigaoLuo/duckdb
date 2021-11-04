@@ -34,7 +34,7 @@ jobs:
       run:  make debug
 
     - name: GoogleTest
-      run: make art_test
+      run: make google_test_debug
 
     - name: Test
       run: make unittestci

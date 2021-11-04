@@ -1,4 +1,4 @@
-.PHONY: all opt unit clean debug release release_expanded test unittest allunit docs doxygen format sqlite imdb
+.PHONY: all opt unit clean debug google_test_debug release release_expanded test unittest allunit docs doxygen format sqlite imdb
 
 all: release
 opt: release
@@ -106,6 +106,9 @@ debug:
 	cd build/debug && \
 	cmake $(GENERATOR) $(FORCE_COLOR) ${WARNINGS_AS_ERRORS} ${DISABLE_UNITY_FLAG} ${DISABLE_SANITIZER_FLAG} ${STATIC_LIBCPP} ${EXTENSIONS} -DCMAKE_BUILD_TYPE=Debug ../.. && \
 	cmake --build .
+
+google_test_debug:
+	cd build/debug && ./art_benchmark
 
 release_expanded:
 	mkdir -p build/release_expanded && \
