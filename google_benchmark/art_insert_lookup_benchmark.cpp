@@ -82,10 +82,14 @@ public:
 
         // Check: src/execution/index/art/art.cpp bool ART::Insert(IndexLock &lock, DataChunk &input, Vector &row_ids)
         // now insert the elements into the index
+        bool insert_result = true;
         for (idx_t idx = 0; idx < num_keys; ++idx) {
             row_t row_id = idx;
-            bool insert_result = index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
+            insert_result = insert_result && index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
         }
+		if (!insert_result) {
+			__builtin_unreachable();
+		}
 	}
 
 	void Lookup() {
