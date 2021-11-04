@@ -21,9 +21,9 @@ public:
         // Check: src/execution/operator/schema/physical_create_index.cpp
         index = make_unique<ART>(column_ids, unbound_expressions, false);
 
-        num_keys = state.range(0);
+        num_keys = static_cast<idx_t>(state.range(0));
         in_art_input_data.reserve(num_keys);
-        for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
+        for (idx_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
 
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
         for (idx_t idx = 0; idx < num_keys; ++idx) {
@@ -57,7 +57,7 @@ public:
     void GenerateSparseUniqueKeys() {
         {
             /// create sparse, unique keys.
-            int32_t count = 0;
+            idx_t count = 0;
             std::set<int32_t> keySet;
             std::random_device dev;
             std::mt19937 rng(dev());
@@ -95,7 +95,7 @@ public:
         }
 	}
 
-    int32_t num_keys = 0;
+    idx_t num_keys = 0;
     bool if_shuffled = false;
     unique_ptr<ART> index;
 
