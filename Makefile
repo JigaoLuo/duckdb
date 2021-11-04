@@ -108,7 +108,7 @@ debug:
 	cmake --build .
 
 google_test_debug:
-	cd build/debug/google_benchmark && ./art_benchmark
+	cd build/debug/google_test && ./art_test
 
 release_expanded:
 	mkdir -p build/release_expanded && \
