@@ -95,7 +95,7 @@ public:
 	void Lookup() {
         // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
         for (idx_t idx = 0; idx < num_keys; ++idx) {
-            auto leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
+            auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
         }
 	}
 
