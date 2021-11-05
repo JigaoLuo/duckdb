@@ -4,11 +4,11 @@ add_definitions(-DDUCKDB_ROOT_DIRECTORY="${PROJECT_SOURCE_DIR}")
 
 include(FetchContent)
 FetchContent_Declare(
-        googlebenchmark
+        benchmark
         URL https://github.com/google/benchmark/archive/refs/tags/v1.6.0.zip
 )
-FetchContent_MakeAvailable(googlebenchmark)
-find_package(benchmark REQUIRED)
+FetchContent_MakeAvailable(benchmark)
+#find_package(benchmark REQUIRED)
 
 add_executable(
         art_benchmark
