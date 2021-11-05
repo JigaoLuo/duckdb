@@ -47,6 +47,7 @@ jobs:
       CC: ccache gcc-10
       CXX: ccache g++-10
       TREAT_WARNINGS_AS_ERRORS: 0
+      FORCE_WARN_UNUSED: 0
       GEN: ninja
 
     steps:
