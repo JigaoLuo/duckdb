@@ -39,17 +39,17 @@ jobs:
     - name: Test
       run: make unittestci
 
-linux-release:
-  name: Linux Release
-  runs-on: ubuntu-20.04
+ linux-release:
+    name: Linux Release
+    runs-on: ubuntu-20.04
 
-  env:
-    CC: ccache gcc-10
-    CXX: ccache g++-10
-    TREAT_WARNINGS_AS_ERRORS: 0
-    GEN: ninja
+    env:
+      CC: ccache gcc-10
+      CXX: ccache g++-10
+      TREAT_WARNINGS_AS_ERRORS: 0
+      GEN: ninja
 
-  steps:
+    steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
@@ -62,9 +62,6 @@ linux-release:
 
     - name: GoogleTest
       run: make google_test_release
-
-    - name: GoogleBenchmark
-      run: make google_benchmark_release
 
  format-check:
     name: Format Check
