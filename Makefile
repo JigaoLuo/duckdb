@@ -1,4 +1,4 @@
-.PHONY: all opt unit clean debug google_test_debug release release_expanded test unittest allunit docs doxygen format sqlite imdb
+.PHONY: all opt unit clean debug google_test_debug google_test_release google_benchmark_release release release_expanded test unittest allunit docs doxygen format sqlite imdb
 
 all: release
 opt: release
@@ -109,6 +109,12 @@ debug:
 
 google_test_debug:
 	cd build/debug/google_test && ./art_test
+
+google_test_release:
+	cd build/release/google_test && ./art_test
+
+google_benchmark_release:
+	cd build/release/google_benchmark && ./art_benchmark
 
 release_expanded:
 	mkdir -p build/release_expanded && \
