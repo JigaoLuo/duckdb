@@ -39,31 +39,6 @@ jobs:
     - name: Test
       run: make unittestci
 
- linux-release:
-    name: Linux Release
-    runs-on: ubuntu-20.04
-
-    env:
-      CC: ccache gcc-10
-      CXX: ccache g++-10
-      TREAT_WARNINGS_AS_ERRORS: 0
-      FORCE_WARN_UNUSED: 0
-      GEN: ninja
-
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    - name: Install
-      run: sudo apt-get update -y -qq && sudo apt-get install -y -qq ninja-build ccache
-
-    - name: Release
-      run:  make release
-
-    - name: GoogleTest
-      run: make google_test_release
-
  format-check:
     name: Format Check
     runs-on: ubuntu-20.04
