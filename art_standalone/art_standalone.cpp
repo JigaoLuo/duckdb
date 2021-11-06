@@ -36,7 +36,7 @@ int main(int argc,char** argv) {
     vector<unique_ptr<Key>> not_in_art_keys;
 
     {
-		/// Set Up
+        /// Set Up
         // Check: src/include/duckdb/planner/operator/logical_create_index.hpp
         vector<column_t> column_ids{0}; // Build index on a table with only one column.
         vector<unique_ptr<Expression>> unbound_expressions;
@@ -46,8 +46,8 @@ int main(int argc,char** argv) {
     }
 
     {
-		/// Parse argv[2]
-		// sorted dense keys
+        /// Parse argv[2]
+        // sorted dense keys
         in_art_input_data.reserve(num_keys);
         for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
         if (atoi(argv[2]) == 1) {
@@ -69,9 +69,9 @@ int main(int argc,char** argv) {
 	}
 
     {
-		/// InsertInputData
+        /// InsertInputData
         insert_keys.clear();
-		in_art_keys.clear();
+        in_art_keys.clear();
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
         for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
             insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
