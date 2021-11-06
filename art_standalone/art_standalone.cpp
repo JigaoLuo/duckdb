@@ -70,6 +70,8 @@ int main(int argc,char** argv) {
 
     {
 		/// InsertInputData
+        insert_keys.clear();
+		in_art_keys.clear();
         // Check: src/execution/index/art/art.cpp static void TemplatedGenerateKeys(Vector &input, idx_t count, vector<unique_ptr<Key>> &insert_keys, bool is_little_endian)
         for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
             insert_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
@@ -81,9 +83,9 @@ int main(int argc,char** argv) {
         // now insert the elements into the index
         for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
             row_t row_id = idx;
-            bool insert_result = index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
+            bool __attribute__((unused)) insert_result = index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
         }
-        printf("%d,insert(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime()-start)) / 1000000.0);
+        printf("%d,insert(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime() - start)) / 1000000.0);
 	}
 
     {
@@ -94,7 +96,7 @@ int main(int argc,char** argv) {
         for (unsigned r = 0;r < repeat; ++r) {
 			// Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
 			for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-				auto leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
+				auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
 			}
 		}
         printf("%d,search(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() * repeat / ((gettime()-start)) / 1000000.0);
