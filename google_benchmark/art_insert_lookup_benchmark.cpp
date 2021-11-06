@@ -118,6 +118,7 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, SortedDenseKeys_Insert_Test)(benchmark::St
 			state.ResumeTiming();
 		}
         Insert();
+        state.counters["Throughput"] = benchmark::Counter(state.range(0), benchmark::Counter::kIsRate);
     }
 }
 
@@ -132,6 +133,7 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, SortedDenseKeys_Lookup_Test)(benchmark::St
             state.ResumeTiming();
         }
         Lookup();
+        state.counters["Throughput"] = benchmark::Counter(state.range(0), benchmark::Counter::kIsRate);
     }
 }
 BENCHMARK_REGISTER_F(INT32_ART_Fixture, SortedDenseKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
@@ -145,6 +147,7 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, RandomDenseKeys_Insert_Test)(benchmark::St
             state.ResumeTiming();
         }
         Insert();
+        state.counters["Throughput"] = benchmark::Counter(state.range(0), benchmark::Counter::kIsRate);
     }
 }
 
@@ -159,6 +162,7 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)(benchmark::St
             state.ResumeTiming();
         }
         Lookup();
+        state.counters["Throughput"] = benchmark::Counter(state.range(0), benchmark::Counter::kIsRate);
     }
 }
 BENCHMARK_REGISTER_F(INT32_ART_Fixture, RandomDenseKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
@@ -171,6 +175,7 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, SparseUniqueKeys_Insert_Test)(benchmark::S
             state.ResumeTiming();
         }
         Insert();
+        state.counters["Throughput"] = benchmark::Counter(state.range(0), benchmark::Counter::kIsRate);
     }
 }
 
@@ -185,6 +190,7 @@ BENCHMARK_DEFINE_F(INT32_ART_Fixture, SparseUniqueKeys_Lookup_Test)(benchmark::S
             state.ResumeTiming();
         }
         Lookup();
+        state.counters["Throughput"] = benchmark::Counter(state.range(0), benchmark::Counter::kIsRate);
     }
 }
 BENCHMARK_REGISTER_F(INT32_ART_Fixture, SparseUniqueKeys_Lookup_Test)->Arg(1000)->Arg(1000000)->Unit(benchmark::kMillisecond);
