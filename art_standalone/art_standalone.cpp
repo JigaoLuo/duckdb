@@ -88,12 +88,16 @@ int main(int argc,char** argv) {
 
     {
         /// LookupInputData
+        unsigned repeat = 100000000 / in_art_input_data.size();
+        if (repeat < 1) repeat = 1;
         double start = gettime();
-        // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-            auto leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
-        }
-        printf("%d,search(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime()-start)) / 1000000.0);
+        for (unsigned r = 0;r < repeat; ++r) {
+			// Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
+			for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+				auto leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
+			}
+		}
+        printf("%d,search(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() * repeat / ((gettime()-start)) / 1000000.0);
     }
 
     return 0;
