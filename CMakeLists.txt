@@ -531,13 +531,16 @@ add_subdirectory(tools)
 
 add_subdirectory(extension)
 
+message("Jigao Project: google test is included")
+add_subdirectory(google_test)
+message("Jigao Project: google benchmark is included")
+add_subdirectory(google_benchmark)
+message("Jigao Project: art stand-alone program is included")
+add_subdirectory(art_standalone)
+
 if(NOT CLANG_TIDY)
   if(${BUILD_UNITTESTS})
     add_subdirectory(test)
-    message("Jigao Project: google test is included")
-    add_subdirectory(google_test)
-    message("Jigao Project: google benchmark is included")
-    add_subdirectory(google_benchmark)
     if(NOT WIN32
       AND NOT SUN
       AND ${BUILD_BENCHMARKS})
