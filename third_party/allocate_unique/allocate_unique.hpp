@@ -3,8 +3,6 @@
 // Requires C++14 compiler.
 #include <memory>
 
-namespace std {
-
 template <typename Allocator>
 struct Deallocator {
     using value_type = typename Allocator::value_type;
@@ -25,7 +23,7 @@ template <typename Allocator, typename U>
 using Rebind = typename std::allocator_traits<Allocator>::template rebind_alloc<U>;
 
 template <typename T, typename Allocator, typename... Args>
-inline std::enable_if_t<!is_array<T>::value, std::unique_ptr<T, Deallocator<Rebind<Allocator, T>>>>
+inline std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T, Deallocator<Rebind<Allocator, T>>>>
 allocate_unique(const Allocator& allocator, Args&&... args) {
     using Alloc = Rebind<Allocator, T>;
     using Traits = std::allocator_traits<Alloc>;
@@ -41,9 +39,9 @@ allocate_unique(const Allocator& allocator, Args&&... args) {
 }
 
 template <typename T, typename Allocator>
-inline std::enable_if_t<is_array<T>::value && extent<T>::value == 0, std::unique_ptr<T, Deallocator<Rebind<Allocator, remove_extent_t<T>>>>>
+inline std::enable_if_t<std::is_array<T>::value && std::extent<T>::value == 0, std::unique_ptr<T, Deallocator<Rebind<Allocator, std::remove_extent_t<T>>>>>
 allocate_unique(const Allocator& allocator, size_t size) {
-    using Elem = remove_extent_t<T>;
+    using Elem = std::remove_extent_t<T>;
     using Alloc = Rebind<Allocator, Elem>;
     using Traits = std::allocator_traits<Alloc>;
     Alloc alloc(allocator);
@@ -62,5 +60,3 @@ allocate_unique(const Allocator& allocator, size_t size) {
     Deallocator<Alloc> dealloc(alloc, size);
     return std::unique_ptr<T, Deallocator<Alloc>>(ptr, dealloc);
 }
-
-}  // namespace std
