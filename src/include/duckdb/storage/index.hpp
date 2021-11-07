@@ -47,6 +47,11 @@ public:
 	//! Whether or not the index is an index built to enforce a PRIMARY KEY constraint
 	bool is_primary;
 
+	//! A allocator for this index. [Added by Jigao for the ART Index]
+	//! This allocator could be replaced by other custom memory allocator.
+    std::allocator<void> allocator;
+    using Allocator = decltype(allocator);
+
 public:
 	//! Initialize a scan on the index with the given expression and column ids
 	//! to fetch from the base table when we only have one query predicate

@@ -46,12 +46,12 @@ idx_t Node256::GetNextPos(idx_t pos) {
 	return Node::GetNextPos(pos);
 }
 
-unique_ptr<Node> *Node256::GetChild(idx_t pos) {
+unique_ptr<Node, void(*)(void*)> *Node256::GetChild(idx_t pos) {
 	D_ASSERT(child[pos]);
 	return &child[pos];
 }
 
-void Node256::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_ptr<Node> &child) {
+void Node256::Insert(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key_byte, unique_ptr<Node, void(*)(void*)> &child) {
 	Node256 *n = static_cast<Node256 *>(node.get());
 
 	n->count++;

@@ -23,6 +23,9 @@
 #include "duckdb/execution/index/art/node48.hpp"
 #include "duckdb/execution/index/art/node256.hpp"
 
+//! For allocator of the index. [Added by Jigao for the ART Index]
+#include "allocate_unique.hpp"
+
 namespace duckdb {
 struct IteratorEntry {
 	IteratorEntry() {
@@ -110,7 +113,7 @@ public:
 	//! Insert a row id into a leaf node
 	bool InsertToLeaf(Leaf &leaf, row_t row_id);
 	//! Insert the leaf value into the tree
-	bool Insert(unique_ptr<Node> &node, unique_ptr<Key> key, unsigned depth, row_t row_id);
+	bool Insert(unique_ptr<Node, void(*)(void*)> &node, unique_ptr<Key> key, unsigned depth, row_t row_id);
 
 	//! Erase element from leaf (if leaf has more than one value) or eliminate the leaf itself
 	void Erase(unique_ptr<Node> &node, Key &key, unsigned depth, row_t row_id);

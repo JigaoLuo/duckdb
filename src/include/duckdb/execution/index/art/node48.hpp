@@ -16,7 +16,7 @@ public:
 	Node48(ART &art, size_t compression_length);
 
 	uint8_t child_index[256];
-	unique_ptr<Node> child[48];
+	unique_ptr<Node, void(*)(void*)> child[48];
 
 public:
 	//! Get position of a byte, returns -1 if not exists
@@ -27,14 +27,25 @@ public:
 	//! Get the next position in the node, or INVALID_INDEX if there is no next position
 	idx_t GetNextPos(idx_t pos) override;
 	//! Get Node48 Child
-	unique_ptr<Node> *GetChild(idx_t pos) override;
+	unique_ptr<Node, void(*)(void*)> *GetChild(idx_t pos) override;
 
 	idx_t GetMin() override;
 
 	//! Insert node in Node48
-	static void Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_ptr<Node> &child);
+	static void Insert(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key_byte, unique_ptr<Node, void(*)(void*)> &child);
 
 	//! Shrink to node 16
 	static void Erase(ART &art, unique_ptr<Node> &node, int pos);
 };
 } // namespace duckdb
+
+//namespace std {
+//template<>
+//class default_delete<duckdb::Node48> {
+//public:
+//    void operator()(duckdb::Node48 *ptr) {
+//        std::cout << "Node48 Delete" << std::endl; //TODO(jigao): only a checker
+//        delete ptr;
+//    }
+//};
+//} // namespace std

@@ -11,6 +11,8 @@
 #include "duckdb/execution/index/art/art_key.hpp"
 #include "duckdb/common/common.hpp"
 
+#include <iostream>
+
 namespace duckdb {
 enum class NodeType : uint8_t { N4 = 0, N16 = 1, N48 = 2, N256 = 3, NLeaf = 4 };
 
@@ -53,12 +55,12 @@ public:
 	}
 	//! Get the child at the specified position in the node. pos should be between [0, count). Throws an assertion if
 	//! the element is not found.
-	virtual unique_ptr<Node> *GetChild(idx_t pos);
+	virtual unique_ptr<Node, void(*)(void*)> *GetChild(idx_t pos);
 
 	//! Compare the key with the prefix of the node, return the number matching bytes
 	static uint32_t PrefixMismatch(ART &art, Node *node, Key &key, uint64_t depth);
 	//! Insert leaf into inner node
-	static void InsertLeaf(ART &art, unique_ptr<Node> &node, uint8_t key, unique_ptr<Node> &new_node);
+	static void InsertLeaf(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key, unique_ptr<Node, void(*)(void*)> &new_node);
 	//! Erase entry from node
 	static void Erase(ART &art, unique_ptr<Node> &node, idx_t pos);
 
@@ -68,3 +70,14 @@ protected:
 };
 
 } // namespace duckdb
+
+//namespace std {
+//template<>
+//class default_delete<duckdb::Node> {
+//public:
+//    void operator()(duckdb::Node *ptr) {
+//        std::cout << "Node Delete" << std::endl; //TODO(jigao): only a checker
+//        delete ptr;
+//    }
+//};
+//} // namespace std

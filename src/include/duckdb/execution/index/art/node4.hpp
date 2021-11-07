@@ -16,7 +16,7 @@ public:
 	Node4(ART &art, size_t compression_length);
 
 	uint8_t key[4];
-	unique_ptr<Node> child[4];
+	unique_ptr<Node, void(*)(void*)> child[4];
 
 public:
 	//! Get position of a byte, returns -1 if not exists
@@ -27,13 +27,24 @@ public:
 	//! Get the next position in the node, or INVALID_INDEX if there is no next position
 	idx_t GetNextPos(idx_t pos) override;
 	//! Get Node4 Child
-	unique_ptr<Node> *GetChild(idx_t pos) override;
+	unique_ptr<Node, void(*)(void*)> *GetChild(idx_t pos) override;
 
 	idx_t GetMin() override;
 
 	//! Insert Leaf to the Node4
-	static void Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_ptr<Node> &child);
+	static void Insert(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key_byte, unique_ptr<Node, void(*)(void*)> &child);
 	//! Remove Leaf from Node4
 	static void Erase(ART &art, unique_ptr<Node> &node, int pos);
 };
 } // namespace duckdb
+
+//namespace std {
+//template<>
+//class default_delete<duckdb::Node4> {
+//public:
+//    void operator()(duckdb::Node4 *ptr) {
+//        std::cout << "Node4 Delete" << std::endl; //TODO(jigao): only a checker
+//        delete ptr;
+//    }
+//};
+//} // namespace std

@@ -42,7 +42,7 @@ idx_t Node16::GetNextPos(idx_t pos) {
 	return pos < count ? pos : INVALID_INDEX;
 }
 
-unique_ptr<Node> *Node16::GetChild(idx_t pos) {
+unique_ptr<Node, void(*)(void*)> *Node16::GetChild(idx_t pos) {
 	D_ASSERT(pos < count);
 	return &child[pos];
 }
@@ -51,7 +51,7 @@ idx_t Node16::GetMin() {
 	return 0;
 }
 
-void Node16::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_ptr<Node> &child) {
+void Node16::Insert(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key_byte, unique_ptr<Node, void(*)(void*)> &child) {
 	Node16 *n = static_cast<Node16 *>(node.get());
 
 	if (n->count < 16) {
@@ -71,8 +71,8 @@ void Node16::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_p
 		n->count++;
 	} else {
 		// Grow to Node48
-		auto new_node = make_unique<Node48>(art, n->prefix_length);
-		for (idx_t i = 0; i < node->count; i++) {
+        unique_ptr<Node48, void(*)(void*)> new_node(allocate<Node48>(art, n->prefix_length), deallocate<Node48>);  /// auto new_node = make_unique<Node48>(art, n->prefix_length);
+        for (idx_t i = 0; i < node->count; i++) {
 			new_node->child_index[n->key[i]] = i;
 			new_node->child[i] = move(n->child[i]);
 		}

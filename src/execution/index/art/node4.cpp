@@ -43,12 +43,12 @@ idx_t Node4::GetNextPos(idx_t pos) {
 	return pos < count ? pos : INVALID_INDEX;
 }
 
-unique_ptr<Node> *Node4::GetChild(idx_t pos) {
+unique_ptr<Node, void(*)(void*)> *Node4::GetChild(idx_t pos) {
 	D_ASSERT(pos < count);
 	return &child[pos];
 }
 
-void Node4::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_ptr<Node> &child) {
+void Node4::Insert(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key_byte, unique_ptr<Node, void(*)(void*)> &child) {
 	Node4 *n = static_cast<Node4 *>(node.get());
 
 	// Insert leaf into inner node
@@ -69,8 +69,8 @@ void Node4::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_pt
 		n->count++;
 	} else {
 		// Grow to Node16
-		auto new_node = make_unique<Node16>(art, n->prefix_length);
-		new_node->count = 4;
+        unique_ptr<Node16, void(*)(void*)> new_node(allocate<Node16>(art, n->prefix_length), deallocate<Node16>);  /// auto new_node = make_unique<Node16>(art, n->prefix_length);
+        new_node->count = 4;
 		CopyPrefix(art, node.get(), new_node.get());
 		for (idx_t i = 0; i < 4; i++) {
 			new_node->key[i] = n->key[i];

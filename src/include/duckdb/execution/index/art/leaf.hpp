@@ -33,3 +33,15 @@ private:
 };
 
 } // namespace duckdb
+
+
+//namespace std {
+//template<>
+//class default_delete<duckdb::Leaf> {
+//public:
+//    void operator()(duckdb::Leaf *ptr) {
+//		std::cout << "Leaf Delete" << std::endl; //TODO(jigao): only a checker
+//        delete ptr;
+//    }
+//};
+//} // namespace std

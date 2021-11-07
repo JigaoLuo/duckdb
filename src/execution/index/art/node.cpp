@@ -14,7 +14,7 @@ void Node::CopyPrefix(ART &art, Node *src, Node *dst) {
 }
 
 // LCOV_EXCL_START
-unique_ptr<Node> *Node::GetChild(idx_t pos) {
+unique_ptr<Node, void(*)(void*)> *Node::GetChild(idx_t pos) {
 	D_ASSERT(0);
 	return nullptr;
 }
@@ -35,7 +35,7 @@ uint32_t Node::PrefixMismatch(ART &art, Node *node, Key &key, uint64_t depth) {
 	return pos;
 }
 
-void Node::InsertLeaf(ART &art, unique_ptr<Node> &node, uint8_t key, unique_ptr<Node> &new_node) {
+void Node::InsertLeaf(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key, unique_ptr<Node, void(*)(void*)> &new_node) {
 	switch (node->type) {
 	case NodeType::N4:
 		Node4::Insert(art, node, key, new_node);

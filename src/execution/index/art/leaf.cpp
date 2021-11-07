@@ -16,7 +16,7 @@ Leaf::Leaf(ART &art, unique_ptr<Key> value, row_t row_id) : Node(art, NodeType::
 void Leaf::Insert(row_t row_id) {
 	// Grow array
 	if (num_elements == capacity) {
-		auto new_row_id = unique_ptr<row_t[]>(new row_t[capacity * 2]);
+		auto new_row_id = unique_ptr<row_t[]>(new row_t[capacity * 2]);///
 		memcpy(new_row_id.get(), row_ids.get(), capacity * sizeof(row_t));
 		capacity *= 2;
 		row_ids = move(new_row_id);

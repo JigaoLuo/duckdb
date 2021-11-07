@@ -41,7 +41,7 @@ idx_t Node48::GetNextPos(idx_t pos) {
 	return Node::GetNextPos(pos);
 }
 
-unique_ptr<Node> *Node48::GetChild(idx_t pos) {
+unique_ptr<Node, void(*)(void*)> *Node48::GetChild(idx_t pos) {
 	D_ASSERT(child_index[pos] != Node::EMPTY_MARKER);
 	return &child[child_index[pos]];
 }
@@ -55,7 +55,7 @@ idx_t Node48::GetMin() {
 	return INVALID_INDEX;
 }
 
-void Node48::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_ptr<Node> &child) {
+void Node48::Insert(ART &art, unique_ptr<Node, void(*)(void*)> &node, uint8_t key_byte, unique_ptr<Node, void(*)(void*)> &child) {
 	Node48 *n = static_cast<Node48 *>(node.get());
 
 	// Insert leaf into inner node
@@ -74,8 +74,8 @@ void Node48::Insert(ART &art, unique_ptr<Node> &node, uint8_t key_byte, unique_p
 		n->count++;
 	} else {
 		// Grow to Node256
-		auto new_node = make_unique<Node256>(art, n->prefix_length);
-		for (idx_t i = 0; i < 256; i++) {
+        unique_ptr<Node256, void(*)(void*)> new_node(allocate<Node256>(art, n->prefix_length), deallocate<Node256>);  /// auto new_node = make_unique<Node256>(art, n->prefix_length);
+        for (idx_t i = 0; i < 256; i++) {
 			if (n->child_index[i] != Node::EMPTY_MARKER) {
 				new_node->child[i] = move(n->child[n->child_index[i]]);
 			}
