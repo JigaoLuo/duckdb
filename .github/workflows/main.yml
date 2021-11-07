@@ -113,3 +113,32 @@ jobs:
     - name: Tidy Check
       run: make tidy-check
 
+ valgrind:
+   name: Valgrind
+   runs-on: ubuntu-20.04
+   needs: linux-debug
+   env:
+     CC: gcc-10
+     CXX: g++-10
+     DISABLE_SANITIZER: 1
+     GEN: ninja
+
+   steps:
+     - uses: actions/checkout@v2
+       with:
+         fetch-depth: 0
+
+     - name: Install
+       run: sudo apt-get update -y -qq && sudo apt-get install -y -qq ninja-build valgrind
+
+     - name: Build
+       run: make debug
+
+     - name: Test GoogleTest
+       run: valgrind ./build/debug/google_test/art_test
+
+     - name: Test GoogleBenchmark
+       run: valgrind ./build/debug/google_benchmark/art_benchmark
+
+     - name: Test ARTStandalone
+       run: valgrind ./build/debug/art_standalone/art_standalone 1000000 0 && valgrind ./build/debug/art_standalone/art_standalone 1000000 1 && valgrind ./build/debug/art_standalone/art_standalone 1000000 2
