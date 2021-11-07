@@ -68,7 +68,7 @@ int main(int argc,char** argv) {
                 if (!keySet.count(in_art_input_data[count])) keySet.insert(in_art_input_data[count++]);
             }
         }
-	}
+    }
 
     {
         /// InsertInputData
@@ -89,7 +89,7 @@ int main(int argc,char** argv) {
             row_t row_id = idx;
             bool __attribute__((unused)) insert_result = index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
         }
-        printf("%ul,insert(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime() - start)) / 1000000.0);
+        printf("%lu,insert(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime() - start)) / 1000000.0);
         e.stopCounters();
         e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
         std::cout << std::endl;
@@ -108,7 +108,7 @@ int main(int argc,char** argv) {
 				auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
 			}
 		}
-        printf("%ul,search(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() * repeat / ((gettime()-start)) / 1000000.0);
+        printf("%lu,search(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() * repeat / ((gettime()-start)) / 1000000.0);
         e.stopCounters();
         e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
         std::cout << std::endl;
