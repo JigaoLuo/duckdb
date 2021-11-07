@@ -117,7 +117,7 @@ google_benchmark_release:
 	cd build/release/google_benchmark && ./art_benchmark
 
 art_standalone_release:
-	cd build/release/art_standalone && ./art_standalone
+	cd build/release/art_standalone && ./art_standalone 1000000 0 && ./art_standalone 1000000 1 && ./art_standalone 1000000 2
 
 release_expanded:
 	mkdir -p build/release_expanded && \
