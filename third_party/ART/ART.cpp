@@ -16,7 +16,7 @@
 
 #include "../allocator/mmap_allocator.hpp"
 #include "../allocator/MallocAllocator.hpp"
-#include "../allocator/PooledAllocator.hpp"
+#include "../allocator/MemoryPool/C-11/MemoryPool.h"
 #include "../perfevent/PerfEvent.hpp"
 
 // Constants for the node types
@@ -88,22 +88,27 @@ struct Node256 : Node {
    }
 };
 
-/// Allocator
-using Allocator = PooledAllocator<uint8_t>;
-
-/// Allocator for each node after rebinding
-using Node4Allocator = typename Allocator::template rebind<Node4>;
-using Node16Allocator = typename Allocator::template rebind<Node16>;
-using Node48Allocator = typename Allocator::template rebind<Node48>;
-using Node256Allocator = typename Allocator::template rebind<Node256>;
-
-Node4Allocator allocator4;
-Node16Allocator allocator16;
-Node48Allocator allocator48;
-Node256Allocator allocator256;
+///// Allocator
+//using Allocator = MallocAllocator<uint8_t>;
+//
+///// Allocator for each node after rebinding
+//using Node4Allocator = typename Allocator::template rebind<Node4>;
+//using Node16Allocator = typename Allocator::template rebind<Node16>;
+//using Node48Allocator = typename Allocator::template rebind<Node48>;
+//using Node256Allocator = typename Allocator::template rebind<Node256>;
+//
+//Node4Allocator allocator4;
+//Node16Allocator allocator16;
+//Node48Allocator allocator48;
+//Node256Allocator allocator256;
 
 /// Allocator
 //std::allocator<uint8_t> allocator;
+
+MemoryPool<Node4, 16384> allocator4;
+MemoryPool<Node16, 16384> allocator16;
+MemoryPool<Node48, 16384> allocator48;
+MemoryPool<Node256, 16384> allocator256;
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
@@ -726,5 +731,6 @@ int main(int argc,char** argv) {
 //   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
 //   assert(tree==NULL);
 
+   delete [] keys;
    return 0;
 }
