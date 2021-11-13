@@ -16,6 +16,7 @@
 
 #include "../allocator/mmap_allocator.hpp"
 #include "../allocator/MallocAllocator.hpp"
+#include "../allocator/PooledAllocator.hpp"
 #include "../perfevent/PerfEvent.hpp"
 
 // Constants for the node types
@@ -88,7 +89,7 @@ struct Node256 : Node {
 };
 
 /// Allocator
-using Allocator = MallocAllocator<uint8_t>;
+using Allocator = PooledAllocator<uint8_t>;
 
 /// Allocator for each node after rebinding
 using Node4Allocator = typename Allocator::template rebind<Node4>;

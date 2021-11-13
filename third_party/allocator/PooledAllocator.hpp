@@ -6,8 +6,6 @@
 #include <new>
 #include <cassert>
 //---------------------------------------------------------------------------
-namespace pool {
-//---------------------------------------------------------------------------
 template <typename T>
 class PooledAllocator {
     private:
@@ -127,6 +125,4 @@ class PooledAllocator {
     template<typename U>
     using rebind = PooledAllocator<U>;
 };
-//---------------------------------------------------------------------------
-} // namespace pool
 //---------------------------------------------------------------------------
