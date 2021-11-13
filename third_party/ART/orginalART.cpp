@@ -652,11 +652,16 @@ int main(int argc,char** argv) {
    // Build tree
    double start = gettime();
    Node* tree=NULL;
+   PerfEvent e;
+   e.startCounters();
    for (uint64_t i=0;i<n;i++) {
       uint8_t key[8];loadKey(keys[i],key);
       insert(tree,&tree,key,0,keys[i],8);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+   e.stopCounters();
+   e.printReport(std::cout, n); // use n as scale factor
+   std::cout << std::endl;
 
    // Repeat lookup for small trees to get reproducable results
    uint64_t repeat=10000000/n;
@@ -672,13 +677,13 @@ int main(int argc,char** argv) {
    }
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
 
-   start = gettime();
-   for (uint64_t i=0;i<n;i++) {
-      uint8_t key[8];loadKey(keys[i],key);
-      erase(tree,&tree,key,8,0,8);
-   }
-   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-   assert(tree==NULL);
+//   start = gettime();
+//   for (uint64_t i=0;i<n;i++) {
+//      uint8_t key[8];loadKey(keys[i],key);
+//      erase(tree,&tree,key,8,0,8);
+//   }
+//   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+//   assert(tree==NULL);
 
    return 0;
 }

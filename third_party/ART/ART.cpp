@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include "../mmap_allocator/mmap_allocator.hpp"
+#include "../perfevent/PerfEvent.hpp"
 
 // Constants for the node types
 static const int8_t NodeType4=0;
@@ -678,11 +679,16 @@ int main(int argc,char** argv) {
    // Build tree
    double start = gettime();
    Node* tree=NULL;
+   PerfEvent e;
+   e.startCounters();
    for (uint64_t i=0;i<n;i++) {
       uint8_t key[8];loadKey(keys[i],key);
       insert(tree,&tree,key,0,keys[i],8);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+   e.stopCounters();
+   e.printReport(std::cout, n); // use n as scale factor
+   std::cout << std::endl;
 
    // Repeat lookup for small trees to get reproducable results
    uint64_t repeat=10000000/n;
