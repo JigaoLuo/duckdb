@@ -64,8 +64,8 @@ class PooledAllocator {
     /// Simply linked list for chunks
     SLList l;
 
-    /// Chunk size starts with 256 bytes. Only record the current (tail) chunk.
-    size_t tail_chunk_size = 256;
+    /// Chunk size starts with 4096 * 4 bytes. Only record the current (tail) chunk.
+    size_t tail_chunk_size = 4096 * 4;
 
     /// Record the remaning size of the last chunk. Only record the current (tail) chunk.
     size_t tail_chunk_remaining_size = 0;

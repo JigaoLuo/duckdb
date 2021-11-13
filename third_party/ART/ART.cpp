@@ -16,6 +16,7 @@
 
 #include "../allocator/mmap_allocator.hpp"
 #include "../allocator/MallocAllocator.hpp"
+#include "../allocator/PooledAllocator.hpp"
 #include "../allocator/MemoryPool/C-11/MemoryPool.h"
 #include "../perfevent/PerfEvent.hpp"
 
@@ -105,10 +106,10 @@ struct Node256 : Node {
 /// Allocator
 //std::allocator<uint8_t> allocator;
 
-MemoryPool<Node4, 16384> allocator4;
-MemoryPool<Node16, 16384> allocator16;
-MemoryPool<Node48, 16384> allocator48;
-MemoryPool<Node256, 16384> allocator256;
+PooledAllocator<Node4> allocator4;
+PooledAllocator<Node16> allocator16;
+PooledAllocator<Node48> allocator48;
+PooledAllocator<Node256> allocator256;
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
