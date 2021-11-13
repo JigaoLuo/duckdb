@@ -14,7 +14,8 @@
 #include <algorithm>   // std::random_shuffle
 #include <iostream>
 
-#include "../mmap_allocator/mmap_allocator.hpp"
+#include "../allocator/mmap_allocator.hpp"
+#include "../allocator/MallocAllocator.hpp"
 #include "../perfevent/PerfEvent.hpp"
 
 // Constants for the node types
@@ -86,18 +87,22 @@ struct Node256 : Node {
    }
 };
 
-///// Allocator
-//std::allocator<void> allocator;
-//using Allocator = std::allocator<void>;
-//
-///// Allocator for each node after rebinding
-//using Node4Allocator = typename Allocator::template rebind<Node4>;
-//using Node16Allocator = typename Allocator::template rebind<Node16>;
-//using Node48Allocator = typename Allocator::template rebind<Node48>;
-//using Node256Allocator = typename Allocator::template rebind<Node256>;
+/// Allocator
+using Allocator = MallocAllocator<uint8_t>;
+
+/// Allocator for each node after rebinding
+using Node4Allocator = typename Allocator::template rebind<Node4>;
+using Node16Allocator = typename Allocator::template rebind<Node16>;
+using Node48Allocator = typename Allocator::template rebind<Node48>;
+using Node256Allocator = typename Allocator::template rebind<Node256>;
+
+Node4Allocator allocator4;
+Node16Allocator allocator16;
+Node48Allocator allocator48;
+Node256Allocator allocator256;
 
 /// Allocator
-std::allocator<uint8_t> allocator;
+//std::allocator<uint8_t> allocator;
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
@@ -368,7 +373,8 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       while (existingKey[depth+newPrefixLength]==key[depth+newPrefixLength])
          newPrefixLength++;
 
-	  auto memory = allocator.allocate(sizeof(Node4));
+//	  auto memory = allocator.allocate(sizeof(Node4));  ///
+      auto memory = allocator4.allocate();
       Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
       newNode->prefixLength=newPrefixLength;
       memcpy(newNode->prefix,key+depth,min(newPrefixLength,maxPrefixLength));
@@ -384,8 +390,9 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       unsigned mismatchPos=prefixMismatch(node,key,depth,maxKeyLength);
       if (mismatchPos!=node->prefixLength) {
          // Prefix differs, create new node
-         auto memory = allocator.allocate(sizeof(Node4));
-         Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
+//         auto memory = allocator.allocate(sizeof(Node4));  ///
+         auto memory = allocator4.allocate();
+		 Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
          *nodeRef=newNode;
          newNode->prefixLength=mismatchPos;
          memcpy(newNode->prefix,node->prefix,min(mismatchPos,maxPrefixLength));
@@ -437,7 +444,8 @@ void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node16
-      auto memory = allocator.allocate(sizeof(Node16));
+//      auto memory = allocator.allocate(sizeof(Node16)); ///
+      auto memory = allocator16.allocate();
       Node16* newNode=new (memory) Node16();  /// Node16* newNode=new Node16();
       *nodeRef=newNode;
       newNode->count=4;
@@ -445,7 +453,8 @@ void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       for (unsigned i=0;i<4;i++)
          newNode->key[i]=flipSign(node->key[i]);
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
-	  allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node4));  /// delete node;
+//	  allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node4));  /// delete node;
+      allocator4.deallocate(node);
       return insertNode16(newNode,nodeRef,keyByte,child);
    }
 }
@@ -465,15 +474,17 @@ void insertNode16(Node16* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node48
-      auto memory = allocator.allocate(sizeof(Node48));
-      Node48* newNode=new (memory) Node48();  /// Node48* newNode=new Node48();
+//      auto memory = allocator.allocate(sizeof(Node48));  ///
+	  auto memory = allocator48.allocate();
+	  Node48* newNode=new (memory) Node48();  /// Node48* newNode=new Node48();
       *nodeRef=newNode;
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
       for (unsigned i=0;i<node->count;i++)
          newNode->childIndex[flipSign(node->key[i])]=i;
       copyPrefix(node,newNode);
       newNode->count=node->count;
-      allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node16));  /// delete node;
+//      allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node16));  /// delete node;
+      allocator16.deallocate(node);
       return insertNode48(newNode,nodeRef,keyByte,child);
    }
 }
@@ -490,7 +501,8 @@ void insertNode48(Node48* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node256
-      auto memory = allocator.allocate(sizeof(Node256));
+//      auto memory = allocator.allocate(sizeof(Node256));  ///
+	  auto memory = allocator256.allocate();
       Node256* newNode=new (memory) Node256();  /// Node256* newNode=new Node256();
       for (unsigned i=0;i<256;i++)
          if (node->childIndex[i]!=48)
@@ -498,7 +510,8 @@ void insertNode48(Node48* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       newNode->count=node->count;
       copyPrefix(node,newNode);
       *nodeRef=newNode;
-      allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node48));  /// delete node;
+//      allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node48));  /// delete node;
+      allocator48.deallocate(node);
       return insertNode256(newNode,nodeRef,keyByte,child);
    }
 }

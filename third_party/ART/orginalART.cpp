@@ -13,7 +13,7 @@
 #include <sys/time.h>  // gettime
 #include <algorithm>   // std::random_shuffle
 
-#include "../mmap_allocator/mmap_allocator.hpp"
+#include "../allocator/mmap_allocator.hpp"
 #include "../perfevent/PerfEvent.hpp"
 
 // Constants for the node types
