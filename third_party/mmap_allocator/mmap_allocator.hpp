@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <limits>
 #include <string>
+#include <cstring>
 
 #include <sys/mman.h>
 #include <linux/mman.h>
