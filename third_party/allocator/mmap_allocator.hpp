@@ -70,7 +70,7 @@ struct mmap_allocator {
 
         const size_type size = s*sizeof(T);
         void *ptr = mmap(nullptr, size, PROT_READ | PROT_WRITE, mmap_flags, 0, 0);
-        if (!ptr) {
+        if (!ptr || ptr == MAP_FAILED) {
             throw std::runtime_error("mmap failed: "s + std::strerror(errno));
         }
 

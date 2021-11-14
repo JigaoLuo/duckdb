@@ -105,7 +105,7 @@ struct Node256 : Node {
 
 /// Allocator
 //std::allocator<uint8_t> allocator;
-mmap_allocator<uint8_t, page_type::huge_16mb, 0> allocator;
+mmap_allocator<uint8_t, page_type::huge_2mb, 0> allocator;
 
 //PooledAllocator<Node4> allocator4;
 //PooledAllocator<Node16> allocator16;
