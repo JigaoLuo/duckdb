@@ -89,28 +89,8 @@ struct Node256 : Node {
    }
 };
 
-///// Allocator
-//using Allocator = MallocAllocator<uint8_t>;
-//
-///// Allocator for each node after rebinding
-//using Node4Allocator = typename Allocator::template rebind<Node4>;
-//using Node16Allocator = typename Allocator::template rebind<Node16>;
-//using Node48Allocator = typename Allocator::template rebind<Node48>;
-//using Node256Allocator = typename Allocator::template rebind<Node256>;
-//
-//Node4Allocator allocator4;
-//Node16Allocator allocator16;
-//Node48Allocator allocator48;
-//Node256Allocator allocator256;
-
 /// Allocator
-//std::allocator<uint8_t> allocator;
 mmap_allocator<uint8_t, page_type::huge_2mb, 0> allocator;
-
-//PooledAllocator<Node4> allocator4;
-//PooledAllocator<Node16> allocator16;
-//PooledAllocator<Node48> allocator48;
-//PooledAllocator<Node256> allocator256;
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
