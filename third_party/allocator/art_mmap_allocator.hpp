@@ -29,6 +29,7 @@ struct art_mmap_allocator {
 
     art_mmap_allocator(const art_mmap_allocator& other) = delete;
 
+ private:
 	allocate_new_page() {
         switch (PageType) {
             case huge_2mb: num_free_bytes = SIZE_2MB; break;
@@ -39,6 +40,7 @@ struct art_mmap_allocator {
         memory = allocator.allocate(num_free_bytes);
 	}
 
+ public:
     uint8_t* allocate_node4() {
 		if (num_free_bytes < sizeof(Node4)) {
             allocate_new_page();
