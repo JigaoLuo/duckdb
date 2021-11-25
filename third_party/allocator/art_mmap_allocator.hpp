@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "mmap_allocator.hpp"
 #include "../ART/ART_nodes.hpp"
 
@@ -9,10 +11,10 @@ struct art_mmap_allocator {
     uint8_t* memory = nullptr;
     mmap_allocator<uint8_t, PageType, NumaNode> allocator;
 
-    constexpr size_t SIZE_2MB = 2 * 1024 * 1024;
-    constexpr size_t SIZE_16MB = 16 * 1024 * 1024;
-    constexpr size_t SIZE_1GB = 1024 * 1024 * 1024;
-    constexpr size_t SIZE_16GB = 16 * 1024 * 1024 * 1024;
+    constexpr static std::size_t SIZE_2MB = 2ull * 1024ull * 1024ull;
+    constexpr static std::size_t SIZE_16MB = 16ull * 1024ull * 1024ull;
+    constexpr static std::size_t SIZE_1GB = 1024ull * 1024ull * 1024ull;
+    constexpr static std::size_t SIZE_16GB = 16ull * 1024ull * 1024ull * 1024ull;
 
 	art_mmap_allocator() {
         mmap_allocator<uint8_t, PageType, NumaNode> allocator;
@@ -30,7 +32,7 @@ struct art_mmap_allocator {
     art_mmap_allocator(const art_mmap_allocator& other) = delete;
 
  private:
-	allocate_new_page() {
+	void allocate_new_page() {
         switch (PageType) {
             case huge_2mb: num_free_bytes = SIZE_2MB; break;
             case huge_16mb: num_free_bytes = SIZE_16MB; break;
@@ -76,6 +78,10 @@ struct art_mmap_allocator {
         memory += sizeof(Node256);
         return result;
     }
+
+	// TODO(jigao): how to do the node deallocation? if a node is deallocated, which is previously allocated in the middle of a page, this would result in a segmentation inside the page. Such segmentation is hard to track. => Is a slotted page an overkill?
+	// TODO(jigao): Do I need to re-use the freed slot in the future allocation?
+	// TODO(jigao): Do I free an entire page, when all nodes on it are deallocated?
 };
 
 
