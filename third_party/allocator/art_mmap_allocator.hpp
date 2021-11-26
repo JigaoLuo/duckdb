@@ -2,9 +2,12 @@
 
 #include <cstdint>
 #include <vector>
+#include <iostream>
 
 #include "mmap_allocator.hpp"
 #include "../ART/ART_nodes.hpp"
+
+#define DEBUG 1
 
 template <page_type PageType, unsigned NumaNode>
 struct art_mmap_allocator {
@@ -28,6 +31,9 @@ struct art_mmap_allocator {
 		}
         memory = allocator.allocate(num_free_bytes);  /// here num_free_bytes as page size
         allocated_pages.push_back(memory);
+#ifdef DEBUG
+        std::cout << "Page Size: " << num_free_bytes << std::endl;
+#endif
 	}
 
     ~art_mmap_allocator() {
@@ -39,6 +45,9 @@ struct art_mmap_allocator {
             case huge_1gb: page_size = SIZE_1GB; break;
             case huge_16gb: page_size = SIZE_16GB; break;
         }
+#ifdef DEBUG
+        std::cout << "Deallocate number of pages: " << allocated_pages.size() << std::endl;
+#endif
         for (auto& page : allocated_pages) {
             allocator.deallocate(page, page_size);
         }
@@ -56,6 +65,9 @@ struct art_mmap_allocator {
         }
         memory = allocator.allocate(num_free_bytes);  /// here num_free_bytes as page size
         allocated_pages.push_back(memory);
+#ifdef DEBUG
+        std::cout << "Allocate a new page. " << std::endl;
+#endif
 	}
 
  public:
@@ -65,6 +77,9 @@ struct art_mmap_allocator {
 		}
         uint8_t* result = memory;
 		memory += sizeof(Node4);
+#ifdef DEBUG
+        std::cout << "Allocate a new NODE4. " << std::endl;
+#endif
 		return result;
 	}
 
@@ -74,6 +89,9 @@ struct art_mmap_allocator {
         }
         uint8_t* result = memory;
         memory += sizeof(Node16);
+#ifdef DEBUG
+        std::cout << "Allocate a new NODE16. " << std::endl;
+#endif
         return result;
     }
 
@@ -83,6 +101,9 @@ struct art_mmap_allocator {
         }
         uint8_t* result = memory;
         memory += sizeof(Node48);
+#ifdef DEBUG
+        std::cout << "Allocate a new NODE48. " << std::endl;
+#endif
         return result;
     }
 
@@ -92,6 +113,9 @@ struct art_mmap_allocator {
         }
         uint8_t* result = memory;
         memory += sizeof(Node256);
+#ifdef DEBUG
+        std::cout << "Allocate a new NODE256. " << std::endl;
+#endif
         return result;
     }
 
