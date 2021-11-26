@@ -46,9 +46,9 @@ struct Leaf : Node {
     uint64_t* value;   /// Key type: uint64_t
     uint64_t capacity;
     uint64_t num_elements;
-    int64_t[] row_ids;
+    int64_t* row_ids;
 
-    Leaf() : prefixLength(0),count(0),type(NodeTypeLeaf), capacity(1), num_elements(1) {
+    Leaf() : Node(NodeTypeLeaf), capacity(1), num_elements(1) {
         row_ids = new int64_t[this->capacity];
         row_ids[0] = 0;
     }
@@ -106,8 +106,8 @@ struct Node256 : Node {
 
 /// My replacement function: allocate memory for a leaf node.
 inline Node* makeLeaf(uintptr_t tid) {
-    Leaf* newNode=new Leaf();
-    return newNodel
+    Leaf* leaf=new Leaf();
+    return leaf;
 }
 
 inline uintptr_t getLeafValue(Node* node) {
