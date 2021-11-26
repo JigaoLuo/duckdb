@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "mmap_allocator.hpp"
 #include "../ART/ART_nodes.hpp"
@@ -10,6 +11,7 @@ struct art_mmap_allocator {
 	size_t num_free_bytes = 0;
     uint8_t* memory = nullptr;
     mmap_allocator<uint8_t, PageType, NumaNode> allocator;
+    std::vector<uint8_t*> allocated_pages;
 
     constexpr static std::size_t SIZE_2MB = 2ull * 1024ull * 1024ull;
     constexpr static std::size_t SIZE_16MB = 16ull * 1024ull * 1024ull;
@@ -24,10 +26,23 @@ struct art_mmap_allocator {
             case huge_1gb: num_free_bytes = SIZE_1GB; break;
             case huge_16gb: num_free_bytes = SIZE_16GB; break;
 		}
-        memory = allocator.allocate(num_free_bytes);
+        memory = allocator.allocate(num_free_bytes);  /// here num_free_bytes as page size
+        allocated_pages.push_back(memory);
 	}
 
-    ~art_mmap_allocator() {}
+    ~art_mmap_allocator() {
+	    // Free all allocated pages.
+        size_t page_size = 0;
+        switch (PageType) {
+            case huge_2mb: page_size = SIZE_2MB; break;
+            case huge_16mb: page_size = SIZE_16MB; break;
+            case huge_1gb: page_size = SIZE_1GB; break;
+            case huge_16gb: page_size = SIZE_16GB; break;
+        }
+        for (auto& page : allocated_pages) {
+            allocator.deallocate(page, page_size);
+        }
+	}
 
     art_mmap_allocator(const art_mmap_allocator& other) = delete;
 
@@ -39,7 +54,8 @@ struct art_mmap_allocator {
             case huge_1gb: num_free_bytes = SIZE_1GB; break;
             case huge_16gb: num_free_bytes = SIZE_16GB; break;
         }
-        memory = allocator.allocate(num_free_bytes);
+        memory = allocator.allocate(num_free_bytes);  /// here num_free_bytes as page size
+        allocated_pages.push_back(memory);
 	}
 
  public:
