@@ -21,6 +21,7 @@ static const int8_t NodeType4=0;
 static const int8_t NodeType16=1;
 static const int8_t NodeType48=2;
 static const int8_t NodeType256=3;
+static const int8_t NodeTypeLeaf=4;
 
 // The maximum prefix length for compressed paths stored in the
 // header, if the path is longer it is loaded from the database on
@@ -39,6 +40,18 @@ struct Node {
    uint8_t prefix[maxPrefixLength];
 
    Node(int8_t type) : prefixLength(0),count(0),type(type) {}
+};
+
+struct Leaf : Node {
+    uint64_t* value;   /// Key type: uint64_t
+    uint64_t capacity;
+    uint64_t num_elements;
+    int64_t[] row_ids;
+
+    Leaf() : prefixLength(0),count(0),type(NodeTypeLeaf), capacity(1), num_elements(1) {
+        row_ids = new int64_t[this->capacity];
+        row_ids[0] = 0;
+    }
 };
 
 // Node with up to 4 children
@@ -85,9 +98,16 @@ struct Node256 : Node {
    }
 };
 
+/// Original function from Prof. Leis: only to mock a pointer up without any memory allocation.
+//inline Node* makeLeaf(uintptr_t tid) {
+//   // Create a pseudo-leaf
+//   return reinterpret_cast<Node*>((tid<<1)|1);
+//}
+
+/// My replacement function: allocate memory for a leaf node.
 inline Node* makeLeaf(uintptr_t tid) {
-   // Create a pseudo-leaf
-   return reinterpret_cast<Node*>((tid<<1)|1);
+    Leaf* newNode=new Leaf();
+    return newNodel
 }
 
 inline uintptr_t getLeafValue(Node* node) {
