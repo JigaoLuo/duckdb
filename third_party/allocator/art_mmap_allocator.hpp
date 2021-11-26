@@ -95,7 +95,7 @@ struct art_mmap_allocator {
         return result;
     }
 
-	// TODO(jigao): how to do the node deallocation? if a node is deallocated, which is previously allocated in the middle of a page, this would result in a segmentation inside the page. Such segmentation is hard to track. => Is a slotted page an overkill?
+	// TODO(jigao): how to do the node-level memory deallocation? if a node is deallocated, which is previously allocated in the middle of a page, this would result in a segmentation inside the page. Such segmentation is hard to track. => Is a slotted page an overkill?
 	// TODO(jigao): Do I need to re-use the freed slot in the future allocation?
 	// TODO(jigao): Do I free an entire page, when all nodes on it are deallocated?
 };
