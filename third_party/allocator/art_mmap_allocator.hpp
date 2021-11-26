@@ -7,7 +7,7 @@
 #include "mmap_allocator.hpp"
 #include "../ART/ART_nodes.hpp"
 
-#define DEBUG 1
+//#define DEBUG 1
 
 template <page_type PageType, unsigned NumaNode>
 struct art_mmap_allocator {
