@@ -671,6 +671,8 @@ int main(int argc,char** argv) {
    if (repeat<1)
       repeat=1;
    start = gettime();
+   PerfEvent e_lookup;
+   e_lookup.startCounters();
    for (uint64_t r=0;r<repeat;r++) {
       for (uint64_t i=0;i<n;i++) {
          uint8_t key[8];loadKey(keys[i],key);
@@ -679,7 +681,9 @@ int main(int argc,char** argv) {
       }
    }
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
-
+   e_lookup.stopCounters();
+   e_lookup.printReport(std::cout, n); // use n as scale factor
+   std::cout << std::endl;
 //   start = gettime();
 //   for (uint64_t i=0;i<n;i++) {
 //      uint8_t key[8];loadKey(keys[i],key);
