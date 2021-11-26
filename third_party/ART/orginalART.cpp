@@ -106,8 +106,8 @@ struct Node256 : Node {
 
 /// My replacement function: allocate memory for a leaf node.
 inline Node* makeLeaf(uintptr_t tid) {
-    Leaf* leaf=new Leaf();
-    return leaf;
+    Leaf* leaf=new Leaf();  /// memory allocation without usage.
+    return reinterpret_cast<Node*>((tid<<1)|1);
 }
 
 inline uintptr_t getLeafValue(Node* node) {
