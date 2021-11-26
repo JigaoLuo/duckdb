@@ -78,7 +78,7 @@ struct art_mmap_allocator {
         uint8_t* result = memory;
 		memory += sizeof(Node4);
 #ifdef DEBUG
-        std::cout << "Allocate a new NODE4. " << std::endl;
+        std::cout << "Allocate a new NODE4. Remaining on current page: " << num_free_bytes << std::endl;
 #endif
 		return result;
 	}
@@ -90,7 +90,7 @@ struct art_mmap_allocator {
         uint8_t* result = memory;
         memory += sizeof(Node16);
 #ifdef DEBUG
-        std::cout << "Allocate a new NODE16. " << std::endl;
+        std::cout << "Allocate a new NODE16. Remaining on current page: " << num_free_bytes << std::endl;
 #endif
         return result;
     }
@@ -102,7 +102,7 @@ struct art_mmap_allocator {
         uint8_t* result = memory;
         memory += sizeof(Node48);
 #ifdef DEBUG
-        std::cout << "Allocate a new NODE48. " << std::endl;
+        std::cout << "Allocate a new NODE48. Remaining on current page: " << num_free_bytes << std::endl;
 #endif
         return result;
     }
@@ -114,7 +114,7 @@ struct art_mmap_allocator {
         uint8_t* result = memory;
         memory += sizeof(Node256);
 #ifdef DEBUG
-        std::cout << "Allocate a new NODE256. " << std::endl;
+        std::cout << "Allocate a new NODE256. Remaining on current page: " << num_free_bytes << std::endl;
 #endif
         return result;
     }
