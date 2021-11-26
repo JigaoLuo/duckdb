@@ -71,6 +71,8 @@ struct PerfEvent {
       registerCounter("instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
       registerCounter("L1-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("LLC-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
+      registerCounter("dTLB-load-misses" , PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB <<  0 | (PERF_COUNT_HW_CACHE_OP_READ << 8)  | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16));
+      registerCounter("dTLB-store-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB <<  0 | (PERF_COUNT_HW_CACHE_OP_WRITE << 8) | (PERF_COUNT_HW_CACHE_RESULT_MISS << 16));
       registerCounter("branch-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
       registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
       // additional counters can be found in linux/perf_event.h

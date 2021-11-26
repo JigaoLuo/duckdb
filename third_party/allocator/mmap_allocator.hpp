@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <limits>
 #include <string>
+#include <cstring>
 
 #include <sys/mman.h>
 #include <linux/mman.h>
@@ -63,13 +64,13 @@ struct mmap_allocator {
 
         // force huge page size
         mmap_flags |= (PageType == huge_2mb)  ? MAP_HUGE_2MB  : 0;
-        mmap_flags |= (PageType == huge_16mb) ? MAP_HUGE_16MB : 0;
+//        mmap_flags |= (PageType == huge_16mb) ? MAP_HUGE_16MB : 0; /// I don't use this. :D
         mmap_flags |= (PageType == huge_1gb)  ? MAP_HUGE_1GB  : 0;
-        mmap_flags |= (PageType == huge_16gb) ? MAP_HUGE_16GB : 0;
+//        mmap_flags |= (PageType == huge_16gb) ? MAP_HUGE_16GB : 0; /// I don't use this. :D
 
         const size_type size = s*sizeof(T);
         void *ptr = mmap(nullptr, size, PROT_READ | PROT_WRITE, mmap_flags, 0, 0);
-        if (!ptr) {
+        if (!ptr || ptr == MAP_FAILED) {
             throw std::runtime_error("mmap failed: "s + std::strerror(errno));
         }
 

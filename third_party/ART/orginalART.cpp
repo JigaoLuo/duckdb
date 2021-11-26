@@ -12,17 +12,78 @@
 #include <assert.h>
 #include <sys/time.h>  // gettime
 #include <algorithm>   // std::random_shuffle
-#include <iostream>
 
-#include "ART_nodes.hpp"
-#include "../allocator/art_mmap_allocator.hpp"
-#include "../allocator/MallocAllocator.hpp"
-#include "../allocator/PooledAllocator.hpp"
-#include "../allocator/MemoryPool/C-11/MemoryPool.h"
+#include "../allocator/mmap_allocator.hpp"
 #include "../perfevent/PerfEvent.hpp"
 
-/// Allocator
-art_mmap_allocator<page_type::huge_2mb, 0> art_allocator;
+// Constants for the node types
+static const int8_t NodeType4=0;
+static const int8_t NodeType16=1;
+static const int8_t NodeType48=2;
+static const int8_t NodeType256=3;
+
+// The maximum prefix length for compressed paths stored in the
+// header, if the path is longer it is loaded from the database on
+// demand
+static const unsigned maxPrefixLength=9;
+
+// Shared header of all inner nodes
+struct Node {
+   // length of the compressed path (prefix)
+   uint32_t prefixLength;
+   // number of non-null children
+   uint16_t count;
+   // node type
+   int8_t type;
+   // compressed path (prefix)
+   uint8_t prefix[maxPrefixLength];
+
+   Node(int8_t type) : prefixLength(0),count(0),type(type) {}
+};
+
+// Node with up to 4 children
+struct Node4 : Node {
+   uint8_t key[4];
+   Node* child[4];
+
+   Node4() : Node(NodeType4) {
+      memset(key,0,sizeof(key));
+      memset(child,0,sizeof(child));
+   }
+};
+
+// Node with up to 16 children
+struct Node16 : Node {
+   uint8_t key[16];
+   Node* child[16];
+
+   Node16() : Node(NodeType16) {
+      memset(key,0,sizeof(key));
+      memset(child,0,sizeof(child));
+   }
+};
+
+static const uint8_t emptyMarker=48;
+
+// Node with up to 48 children
+struct Node48 : Node {
+   uint8_t childIndex[256];
+   Node* child[48];
+
+   Node48() : Node(NodeType48) {
+      memset(childIndex,emptyMarker,sizeof(childIndex));
+      memset(child,0,sizeof(child));
+   }
+};
+
+// Node with up to 256 children
+struct Node256 : Node {
+   Node* child[256];
+
+   Node256() : Node(NodeType256) {
+      memset(child,0,sizeof(child));
+   }
+};
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
@@ -293,10 +354,7 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       while (existingKey[depth+newPrefixLength]==key[depth+newPrefixLength])
          newPrefixLength++;
 
-      auto memory = art_allocator.allocate_node4();  ///
-      /// auto memory = allocator.allocate(sizeof(Node4));  ///
-      /// auto memory = allocator4.allocate();  ///
-      Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
+      Node4* newNode=new Node4();
       newNode->prefixLength=newPrefixLength;
       memcpy(newNode->prefix,key+depth,min(newPrefixLength,maxPrefixLength));
       *nodeRef=newNode;
@@ -311,10 +369,7 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       unsigned mismatchPos=prefixMismatch(node,key,depth,maxKeyLength);
       if (mismatchPos!=node->prefixLength) {
          // Prefix differs, create new node
-		 auto memory = art_allocator.allocate_node4();  ///
-         /// auto memory = allocator.allocate(sizeof(Node4));  ///
-         /// auto memory = allocator4.allocate();  ///
-		 Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
+         Node4* newNode=new Node4();
          *nodeRef=newNode;
          newNode->prefixLength=mismatchPos;
          memcpy(newNode->prefix,node->prefix,min(mismatchPos,maxPrefixLength));
@@ -366,18 +421,14 @@ void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node16
-      auto memory = art_allocator.allocate_node16();  ///
-      /// auto memory = allocator.allocate(sizeof(Node16)); ///
-      /// auto memory = allocator16.allocate();  ///
-      Node16* newNode=new (memory) Node16();  /// Node16* newNode=new Node16();
+      Node16* newNode=new Node16();
       *nodeRef=newNode;
       newNode->count=4;
       copyPrefix(node,newNode);
       for (unsigned i=0;i<4;i++)
          newNode->key[i]=flipSign(node->key[i]);
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
-	  /// allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node4));  /// delete node;
-      /// allocator4.deallocate(node);  ///
+      delete node;
       return insertNode16(newNode,nodeRef,keyByte,child);
    }
 }
@@ -397,18 +448,14 @@ void insertNode16(Node16* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node48
-	  auto memory = art_allocator.allocate_node48();  ///
-      /// auto memory = allocator.allocate(sizeof(Node48));  ///
-	  /// auto memory = allocator48.allocate();  ///
-	  Node48* newNode=new (memory) Node48();  /// Node48* newNode=new Node48();
+      Node48* newNode=new Node48();
       *nodeRef=newNode;
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
       for (unsigned i=0;i<node->count;i++)
          newNode->childIndex[flipSign(node->key[i])]=i;
       copyPrefix(node,newNode);
       newNode->count=node->count;
-      /// allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node16));  /// delete node;
-      /// allocator16.deallocate(node);  ///
+      delete node;
       return insertNode48(newNode,nodeRef,keyByte,child);
    }
 }
@@ -425,18 +472,14 @@ void insertNode48(Node48* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node256
-	  auto memory = art_allocator.allocate_node256();  ///
-      /// auto memory = allocator.allocate(sizeof(Node256));  ///
-	  /// auto memory = allocator256.allocate();  ///
-      Node256* newNode=new (memory) Node256();  /// Node256* newNode=new Node256();
+      Node256* newNode=new Node256();
       for (unsigned i=0;i<256;i++)
          if (node->childIndex[i]!=48)
             newNode->child[i]=node->child[node->childIndex[i]];
       newNode->count=node->count;
       copyPrefix(node,newNode);
       *nodeRef=newNode;
-      /// allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node48));  /// delete node;
-      /// allocator48.deallocate(node);  ///
+      delete node;
       return insertNode256(newNode,nodeRef,keyByte,child);
    }
 }
@@ -447,140 +490,140 @@ void insertNode256(Node256* node,Node** nodeRef,uint8_t keyByte,Node* child) {
    node->child[keyByte]=child;
 }
 
-//// Forward references
-//void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace);
-//void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace);
-//void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte);
-//void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte);
-//
-//void erase(Node* node,Node** nodeRef,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
-//   // Delete a leaf from a tree
-//
-//   if (!node)
-//      return;
-//
-//   if (isLeaf(node)) {
-//      // Make sure we have the right leaf
-//      if (leafMatches(node,key,keyLength,depth,maxKeyLength))
-//         *nodeRef=NULL;
-//      return;
-//   }
-//
-//   // Handle prefix
-//   if (node->prefixLength) {
-//      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
-//         return;
-//      depth+=node->prefixLength;
-//   }
-//
-//   Node** child=findChild(node,key[depth]);
-//   if (isLeaf(*child)&&leafMatches(*child,key,keyLength,depth,maxKeyLength)) {
-//      // Leaf found, delete it in inner node
-//      switch (node->type) {
-//         case NodeType4: eraseNode4(static_cast<Node4*>(node),nodeRef,child); break;
-//         case NodeType16: eraseNode16(static_cast<Node16*>(node),nodeRef,child); break;
-//         case NodeType48: eraseNode48(static_cast<Node48*>(node),nodeRef,key[depth]); break;
-//         case NodeType256: eraseNode256(static_cast<Node256*>(node),nodeRef,key[depth]); break;
-//      }
-//   } else {
-//      //Recurse
-//      erase(*child,child,key,keyLength,depth+1,maxKeyLength);
-//   }
-//}
-//
-//void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace) {
-//   // Delete leaf from inner node
-//   unsigned pos=leafPlace-node->child;
-//   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
-//   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
-//   node->count--;
-//
-//   if (node->count==1) {
-//      // Get rid of one-way node
-//      Node* child=node->child[0];
-//      if (!isLeaf(child)) {
-//         // Concantenate prefixes
-//         unsigned l1=node->prefixLength;
-//         if (l1<maxPrefixLength) {
-//            node->prefix[l1]=node->key[0];
-//            l1++;
-//         }
-//         if (l1<maxPrefixLength) {
-//            unsigned l2=min(child->prefixLength,maxPrefixLength-l1);
-//            memcpy(node->prefix+l1,child->prefix,l2);
-//            l1+=l2;
-//         }
-//         // Store concantenated prefix
-//         memcpy(child->prefix,node->prefix,min(l1,maxPrefixLength));
-//         child->prefixLength+=node->prefixLength+1;
-//      }
-//      *nodeRef=child;
-//      delete node;
-//   }
-//}
-//
-//void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace) {
-//   // Delete leaf from inner node
-//   unsigned pos=leafPlace-node->child;
-//   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
-//   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
-//   node->count--;
-//
-//   if (node->count==3) {
-//      // Shrink to Node4
-//      Node4* newNode=new Node4();
-//      newNode->count=node->count;
-//      copyPrefix(node,newNode);
-//      for (unsigned i=0;i<4;i++)
-//         newNode->key[i]=flipSign(node->key[i]);
-//      memcpy(newNode->child,node->child,sizeof(uintptr_t)*4);
-//      *nodeRef=newNode;
-//      delete node;
-//   }
-//}
-//
-//void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte) {
-//   // Delete leaf from inner node
-//   node->child[node->childIndex[keyByte]]=NULL;
-//   node->childIndex[keyByte]=emptyMarker;
-//   node->count--;
-//
-//   if (node->count==12) {
-//      // Shrink to Node16
-//      Node16 *newNode=new Node16();
-//      *nodeRef=newNode;
-//      copyPrefix(node,newNode);
-//      for (unsigned b=0;b<256;b++) {
-//         if (node->childIndex[b]!=emptyMarker) {
-//            newNode->key[newNode->count]=flipSign(b);
-//            newNode->child[newNode->count]=node->child[node->childIndex[b]];
-//            newNode->count++;
-//         }
-//      }
-//      delete node;
-//   }
-//}
-//
-//void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte) {
-//   // Delete leaf from inner node
-//   node->child[keyByte]=NULL;
-//   node->count--;
-//
-//   if (node->count==37) {
-//      // Shrink to Node48
-//      Node48 *newNode=new Node48();
-//      *nodeRef=newNode;
-//      copyPrefix(node,newNode);
-//      for (unsigned b=0;b<256;b++) {
-//         if (node->child[b]) {
-//            newNode->childIndex[b]=newNode->count;
-//            newNode->child[newNode->count]=node->child[b];
-//            newNode->count++;
-//         }
-//      }
-//      delete node;
-//   }
-//}
+// Forward references
+void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace);
+void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace);
+void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte);
+void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte);
+
+void erase(Node* node,Node** nodeRef,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
+   // Delete a leaf from a tree
+
+   if (!node)
+      return;
+
+   if (isLeaf(node)) {
+      // Make sure we have the right leaf
+      if (leafMatches(node,key,keyLength,depth,maxKeyLength))
+         *nodeRef=NULL;
+      return;
+   }
+
+   // Handle prefix
+   if (node->prefixLength) {
+      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
+         return;
+      depth+=node->prefixLength;
+   }
+
+   Node** child=findChild(node,key[depth]);
+   if (isLeaf(*child)&&leafMatches(*child,key,keyLength,depth,maxKeyLength)) {
+      // Leaf found, delete it in inner node
+      switch (node->type) {
+         case NodeType4: eraseNode4(static_cast<Node4*>(node),nodeRef,child); break;
+         case NodeType16: eraseNode16(static_cast<Node16*>(node),nodeRef,child); break;
+         case NodeType48: eraseNode48(static_cast<Node48*>(node),nodeRef,key[depth]); break;
+         case NodeType256: eraseNode256(static_cast<Node256*>(node),nodeRef,key[depth]); break;
+      }
+   } else {
+      //Recurse
+      erase(*child,child,key,keyLength,depth+1,maxKeyLength);
+   }
+}
+
+void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace) {
+   // Delete leaf from inner node
+   unsigned pos=leafPlace-node->child;
+   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
+   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
+   node->count--;
+
+   if (node->count==1) {
+      // Get rid of one-way node
+      Node* child=node->child[0];
+      if (!isLeaf(child)) {
+         // Concantenate prefixes
+         unsigned l1=node->prefixLength;
+         if (l1<maxPrefixLength) {
+            node->prefix[l1]=node->key[0];
+            l1++;
+         }
+         if (l1<maxPrefixLength) {
+            unsigned l2=min(child->prefixLength,maxPrefixLength-l1);
+            memcpy(node->prefix+l1,child->prefix,l2);
+            l1+=l2;
+         }
+         // Store concantenated prefix
+         memcpy(child->prefix,node->prefix,min(l1,maxPrefixLength));
+         child->prefixLength+=node->prefixLength+1;
+      }
+      *nodeRef=child;
+      delete node;
+   }
+}
+
+void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace) {
+   // Delete leaf from inner node
+   unsigned pos=leafPlace-node->child;
+   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
+   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
+   node->count--;
+
+   if (node->count==3) {
+      // Shrink to Node4
+      Node4* newNode=new Node4();
+      newNode->count=node->count;
+      copyPrefix(node,newNode);
+      for (unsigned i=0;i<4;i++)
+         newNode->key[i]=flipSign(node->key[i]);
+      memcpy(newNode->child,node->child,sizeof(uintptr_t)*4);
+      *nodeRef=newNode;
+      delete node;
+   }
+}
+
+void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte) {
+   // Delete leaf from inner node
+   node->child[node->childIndex[keyByte]]=NULL;
+   node->childIndex[keyByte]=emptyMarker;
+   node->count--;
+
+   if (node->count==12) {
+      // Shrink to Node16
+      Node16 *newNode=new Node16();
+      *nodeRef=newNode;
+      copyPrefix(node,newNode);
+      for (unsigned b=0;b<256;b++) {
+         if (node->childIndex[b]!=emptyMarker) {
+            newNode->key[newNode->count]=flipSign(b);
+            newNode->child[newNode->count]=node->child[node->childIndex[b]];
+            newNode->count++;
+         }
+      }
+      delete node;
+   }
+}
+
+void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte) {
+   // Delete leaf from inner node
+   node->child[keyByte]=NULL;
+   node->count--;
+
+   if (node->count==37) {
+      // Shrink to Node48
+      Node48 *newNode=new Node48();
+      *nodeRef=newNode;
+      copyPrefix(node,newNode);
+      for (unsigned b=0;b<256;b++) {
+         if (node->child[b]) {
+            newNode->childIndex[b]=newNode->count;
+            newNode->child[newNode->count]=node->child[b];
+            newNode->count++;
+         }
+      }
+      delete node;
+   }
+}
 
 static double gettime(void) {
   struct timeval now_tv;
@@ -596,11 +639,6 @@ int main(int argc,char** argv) {
 
    uint64_t n=atoi(argv[1]);
    uint64_t* keys=new uint64_t[n];
-
-   std::cout << "Node4 Size: " << sizeof(Node4) << std::endl;
-   std::cout << "Node16 Size: " << sizeof(Node16) << std::endl;
-   std::cout << "Node48 Size: " << sizeof(Node48) << std::endl;
-   std::cout << "Node256 Size: " << sizeof(Node256) << std::endl;
 
    // Generate keys
    for (uint64_t i=0;i<n;i++)
@@ -646,7 +684,6 @@ int main(int argc,char** argv) {
    e_lookup.stopCounters();
    e_lookup.printReport(std::cout, n); // use n as scale factor
    std::cout << std::endl;
-
 //   start = gettime();
 //   for (uint64_t i=0;i<n;i++) {
 //      uint8_t key[8];loadKey(keys[i],key);
@@ -655,6 +692,5 @@ int main(int argc,char** argv) {
 //   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
 //   assert(tree==NULL);
 
-   delete [] keys;
    return 0;
 }
