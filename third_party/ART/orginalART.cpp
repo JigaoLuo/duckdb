@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <sys/time.h>  // gettime
 #include <algorithm>   // std::random_shuffle
+#include <vector>
+#include <set>
 
 #include "../allocator/mmap_allocator.hpp"
 #include "../perfevent/PerfEvent.hpp"
@@ -684,9 +686,16 @@ int main(int argc,char** argv) {
         std::random_device rd;
         std::mt19937 gen(rd());
         zipf_table_distribution<> zipf(n, alpha);
+        std::vector<unsigned long> vec;
+        std::set<unsigned long> set;
         for (int i = 0; i < n; ++i) {
-            lookup_keys[i] = keys[zipf(gen) - 1]; /// Fix zipfian distribution's value range to [0, n)
+            const unsigned long index = zipf(gen) - 1;
+            vec.emplace_back(index);
+            set.emplace(index);
+            lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
         }
+        for (const auto& ele : vec)  std::cout << vec << std::endl;
+        for (const auto& ele : set)  std::cout << vec << std::endl;
     }
 
    // Repeat lookup for small trees to get reproducable results
