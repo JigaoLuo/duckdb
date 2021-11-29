@@ -694,8 +694,8 @@ int main(int argc,char** argv) {
             set.emplace(index);
             lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
         }
-        for (const auto& ele : vec)  std::cout << vec << std::endl;
-        for (const auto& ele : set)  std::cout << vec << std::endl;
+        for (const auto& ele : vec)  std::cout << ele << std::endl;
+        for (const auto& ele : set)  std::cout << ele << std::endl;
     }
 
    // Repeat lookup for small trees to get reproducable results
