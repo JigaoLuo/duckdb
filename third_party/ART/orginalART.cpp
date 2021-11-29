@@ -710,19 +710,8 @@ int main(int argc,char** argv) {
          assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
       }
    }
-// alpha,throughput,cycles,L1-misses,LLC-misses,dTLB-load-misses
-std::string output = "|";
-output += std::to_string(alpha) + ",";
-const double throughput = (n*repeat/1000000.0)/(gettime()-start);
-output += std::to_string(throughput) + ",";
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
    e_lookup.stopCounters();
-for (unsigned i=0; i<e_lookup.events.size(); i++) {
-    if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" || e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-        output += std::to_string(e_lookup.events[i].readCounter()/n) + ",";
-    }
-}
-std::cout << output << std::endl;
    e_lookup.printReport(std::cout, n); // use n as scale factor
    std::cout << std::endl;
 //   start = gettime();
