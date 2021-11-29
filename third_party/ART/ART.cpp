@@ -632,13 +632,13 @@ int main(int argc,char** argv) {
    std::cout << std::endl;
 
     /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
-    uint64_t* looked_keys=new uint64_t[n];
+    uint64_t* lookup_keys=new uint64_t[n];
     if (argv[3][0]=='u') {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
         // TODO(jigao): memory copy
         for (int i = 0; i < n; ++i) {
-            looked_keys[i] = keys[i];
+            lookup_keys[i] = keys[i];
         }
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
@@ -647,7 +647,7 @@ int main(int argc,char** argv) {
         std::mt19937 gen(rd());
         zipf_table_distribution<> zipf(n, alpha);
         for (int i = 0; i < n; ++i) {
-            looked_keys[i] = keys[zipf(gen) - 1]; /// Fix zipfian distribution's value range to [0, n)
+            lookup_keys[i] = keys[zipf(gen) - 1]; /// Fix zipfian distribution's value range to [0, n)
         }
     }
 
@@ -660,9 +660,9 @@ int main(int argc,char** argv) {
    e_lookup.startCounters();
    for (uint64_t r=0;r<repeat;r++) {
       for (uint64_t i=0;i<n;i++) {
-         uint8_t key[8];loadKey(looked_keys[i],key);
+         uint8_t key[8];loadKey(lookup_keys[i],key);
          Node* leaf=lookup(tree,key,8,0,8);
-         assert(isLeaf(leaf) && getLeafValue(leaf)==looked_keys[i]);
+         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
       }
    }
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
