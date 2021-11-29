@@ -642,7 +642,7 @@ int main(int argc,char** argv) {
       return 1;
    }
 
-   uint64_t n=atoi(argv[1]);
+   const uint64_t n=atoi(argv[1]);
    uint64_t* keys=new uint64_t[n];
 
    // Generate keys
@@ -695,7 +695,7 @@ int main(int argc,char** argv) {
             lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
         }
         std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
-        std::cout << "lookup indexes as set: " << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+        std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
     }
 
    // Repeat lookup for small trees to get reproducable results
