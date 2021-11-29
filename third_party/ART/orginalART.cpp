@@ -660,26 +660,23 @@ int main(int argc,char** argv) {
    // Build tree
    double start = gettime();
    Node* tree=NULL;
-//   PerfEvent e;
-//   e.startCounters();
+   // PerfEvent e;
+   // e.startCounters();
    for (uint64_t i=0;i<n;i++) {
       uint8_t key[8];loadKey(keys[i],key);
       insert(tree,&tree,key,0,keys[i],8);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-//   e.stopCounters();
-//   e.printReport(std::cout, n); // use n as scale factor
-//   std::cout << std::endl;
+   // e.stopCounters();
+   // e.printReport(std::cout, n); // use n as scale factor
+   // std::cout << std::endl;
 
    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
     uint64_t* lookup_keys=new uint64_t[n];
     if (argv[3][0]=='u') {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
-        // TODO(jigao): memory copy
-        for (int i = 0; i < n; ++i) {
-            lookup_keys[i] = keys[i];
-        }
+        std::memcpy(lookup_keys, keys, n * sizeof(keys));
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
         const double alpha = atof(argv[4]);
