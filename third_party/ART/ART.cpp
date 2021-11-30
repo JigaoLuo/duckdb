@@ -13,6 +13,8 @@
 #include <sys/time.h>  // gettime
 #include <algorithm>   // std::random_shuffle
 #include <iostream>
+#include <vector>
+#include <set>
 
 #include "ART_nodes.hpp"
 #include "../allocator/art_mmap_allocator.hpp"
@@ -20,6 +22,7 @@
 #include "../allocator/PooledAllocator.hpp"
 #include "../allocator/MemoryPool/C-11/MemoryPool.h"
 #include "../perfevent/PerfEvent.hpp"
+#include "../zipf/zipf_table_distribution.hpp"
 
 /// Allocator
 art_mmap_allocator<page_type::huge_2mb, 0> art_allocator;
@@ -589,10 +592,12 @@ static double gettime(void) {
 }
 
 int main(int argc,char** argv) {
-   if (argc!=3) {
-      printf("usage: %s n 0|1|2\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n", argv[0]);
-      return 1;
-   }
+    if (argc!=5) {
+        printf("usage: %s n 0|1|2 u|z alpha\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n"
+               "u: uniform distributed lookup\nz: zipfian distributed lookup\n"
+               "alpha: the factor of the zipfian distribution", argv[0]);
+        return 1;
+    }
 
    uint64_t n=atoi(argv[1]);
    uint64_t* keys=new uint64_t[n];
@@ -614,19 +619,44 @@ int main(int argc,char** argv) {
       for (uint64_t i=0;i<n;i++)
          keys[i]=(static_cast<uint64_t>(rand())<<32) | static_cast<uint64_t>(rand());
 
+   const double alpha = atof(argv[4]);
+
    // Build tree
    double start = gettime();
    Node* tree=NULL;
-   PerfEvent e;
-   e.startCounters();
+   // PerfEvent e;
+   // e.startCounters();
    for (uint64_t i=0;i<n;i++) {
       uint8_t key[8];loadKey(keys[i],key);
       insert(tree,&tree,key,0,keys[i],8);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-   e.stopCounters();
-   e.printReport(std::cout, n); // use n as scale factor
-   std::cout << std::endl;
+   // e.stopCounters();
+   // e.printReport(std::cout, n); // use n as scale factor
+   // std::cout << std::endl;
+
+    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
+    uint64_t* lookup_keys=new uint64_t[n];
+    if (argv[3][0]=='u') {
+        /// uniform distributed lookup == the original ART lookup procedure
+        /// just copy the key array :D
+        std::memcpy(lookup_keys, keys, n * sizeof(keys));
+    } else if (argv[3][0]=='z') {
+        /// zipfian distributed lookup
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        zipf_table_distribution<> zipf(n, alpha);
+        std::vector<unsigned long> vec;
+        std::set<unsigned long> set;
+        for (int i = 0; i < n; ++i) {
+            const unsigned long index = zipf(gen) - 1;
+            vec.emplace_back(index);
+            set.emplace(index);
+            lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
+        }
+        // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
+        // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+    }
 
    // Repeat lookup for small trees to get reproducable results
    uint64_t repeat=10000000/n;
@@ -637,9 +667,9 @@ int main(int argc,char** argv) {
    e_lookup.startCounters();
    for (uint64_t r=0;r<repeat;r++) {
       for (uint64_t i=0;i<n;i++) {
-         uint8_t key[8];loadKey(keys[i],key);
+         uint8_t key[8];loadKey(lookup_keys[i],key);
          Node* leaf=lookup(tree,key,8,0,8);
-         assert(isLeaf(leaf) && getLeafValue(leaf)==keys[i]);
+         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
       }
    }
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
