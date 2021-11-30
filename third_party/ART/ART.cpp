@@ -619,6 +619,8 @@ int main(int argc,char** argv) {
       for (uint64_t i=0;i<n;i++)
          keys[i]=(static_cast<uint64_t>(rand())<<32) | static_cast<uint64_t>(rand());
 
+   const double alpha = atof(argv[4]);
+
    // Build tree
    double start = gettime();
    Node* tree=NULL;
@@ -641,7 +643,6 @@ int main(int argc,char** argv) {
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
-        const double alpha = atof(argv[4]);
         std::random_device rd;
         std::mt19937 gen(rd());
         zipf_table_distribution<> zipf(n, alpha);
