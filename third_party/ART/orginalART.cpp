@@ -15,7 +15,6 @@
 #include <vector>
 #include <set>
 
-#include "../allocator/mmap_allocator.hpp"
 #include "../perfevent/PerfEvent.hpp"
 #include "../zipf/zipf_table_distribution.hpp"
 
@@ -679,6 +678,10 @@ int main(int argc,char** argv) {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
+
+//        std::random_device rd;
+//        std::mt19937 g(rd());
+//        std::shuffle(lookup_keys, lookup_keys + n, g);
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
         std::random_device rd;
@@ -697,9 +700,23 @@ int main(int argc,char** argv) {
     }
 
    // Repeat lookup for small trees to get reproducable results
-   uint64_t repeat=10000000/n;
-   if (repeat<1)
-      repeat=1;
+   {
+       /// Warm Up
+       std::cout << "Warm UP" << std::endl;
+       uint64_t repeat=10000000/n;
+       if (repeat<1) repeat=1;
+       for (uint64_t r=0;r<repeat;r++) {
+           for (uint64_t i=0;i<n;i++) {
+               uint8_t key[8];loadKey(lookup_keys[i],key);
+               Node* leaf=lookup(tree,key,8,0,8);
+               assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+           }
+       }
+   }
+
+//   uint64_t repeat=10000000/n;
+    uint64_t repeat=10;
+   if (repeat<1) repeat=1;
    start = gettime();
    PerfEvent e_lookup;
    e_lookup.startCounters();
@@ -710,10 +727,22 @@ int main(int argc,char** argv) {
          assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
       }
    }
+std::string output = "|";
+output += std::to_string(alpha) + ",";
+const double throughput = (n*repeat/1000000.0)/(gettime()-start);
+output += std::to_string(throughput) + ",";
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
    e_lookup.stopCounters();
+for (unsigned i=0; i<e_lookup.events.size(); i++) {
+        if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" || e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
+                output += std::to_string(e_lookup.events[i].readCounter()/n) + ",";
+            }
+    }
+output.pop_back();
+std::cout << output << std::endl;
    e_lookup.printReport(std::cout, n); // use n as scale factor
    std::cout << std::endl;
+
 //   start = gettime();
 //   for (uint64_t i=0;i<n;i++) {
 //      uint8_t key[8];loadKey(keys[i],key);
