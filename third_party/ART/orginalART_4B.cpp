@@ -4,7 +4,7 @@
   leis@in.tum.de
  */
 
-#include <cstdlib>    // malloc, free
+#include <stdlib.h>    // malloc, free
 #include <string.h>    // memset, memcpy
 #include <stdint.h>    // integer types
 #include <emmintrin.h> // x86 SSE intrinsics
@@ -110,7 +110,7 @@ uint8_t flipSign(uint8_t keyByte) {
 void loadKey(uintptr_t tid,uint8_t key[]) {
    // Store the key of the tuple into the key vector
    // Implementation is database specific
-   reinterpret_cast<uint64_t*>(key)[0]=__builtin_bswap64(tid);
+   reinterpret_cast<uint32_t*>(key)[0]=__builtin_bswap32(tid);
 }
 
 // This address is used to communicate that search failed
@@ -642,10 +642,10 @@ int main(int argc,char** argv) {
    }
 
    const uint64_t n=atoi(argv[1]);
-   uint64_t* keys=new uint64_t[n];
+   uint32_t* keys=new uint32_t[n];
 
    // Generate keys
-   for (uint64_t i=0;i<n;i++)
+   for (uint32_t i=0;i<n;i++)
       // dense, sorted
       keys[i]=i+1;
    if (atoi(argv[2])==1)
@@ -653,8 +653,8 @@ int main(int argc,char** argv) {
       std::random_shuffle(keys,keys+n);
    if (atoi(argv[2])==2)
       // "pseudo-sparse" (the most-significant leaf bit gets lost)
-      for (uint64_t i=0;i<n;i++)
-         keys[i]=(static_cast<uint64_t>(rand())<<32) | static_cast<uint64_t>(rand());
+      for (uint32_t i=0;i<n;i++)
+         keys[i]=static_cast<uint32_t>(rand());
 
    const double alpha = atof(argv[4]);
 
@@ -664,8 +664,8 @@ int main(int argc,char** argv) {
    // PerfEvent e;
    // e.startCounters();
    for (uint64_t i=0;i<n;i++) {
-      uint8_t key[8];loadKey(keys[i],key);
-      insert(tree,&tree,key,0,keys[i],8);
+      uint8_t key[4];loadKey(keys[i],key);
+      insert(tree,&tree,key,0,keys[i],4);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
    // e.stopCounters();
@@ -673,7 +673,7 @@ int main(int argc,char** argv) {
    // std::cout << std::endl;
 
    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
-    uint64_t* lookup_keys=new uint64_t[n];
+    uint32_t* lookup_keys=new uint32_t[n];
     if (argv[3][0]=='u') {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
@@ -707,40 +707,38 @@ int main(int argc,char** argv) {
        if (repeat<1) repeat=1;
        for (uint64_t r=0;r<repeat;r++) {
            for (uint64_t i=0;i<n;i++) {
-               uint8_t key[8];loadKey(lookup_keys[i],key);
-               Node* leaf=lookup(tree,key,8,0,8);
+               uint8_t key[4];loadKey(lookup_keys[i],key);
+               Node* leaf=lookup(tree,key,4,0,8);
                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
            }
        }
    }
 
-
     std::vector<uint8_t*> real_lookup_keys;
     for (uint64_t i=0;i<n;i++) {
-        uint8_t* key=new uint8_t[8];
+        uint8_t* key=new uint8_t[4];
         loadKey(lookup_keys[i],key);
         real_lookup_keys.push_back(key);
     }
 
 //   uint64_t repeat=10000000/n;
     uint64_t repeat=10;
-    if (repeat<1) repeat=1;
-    PerfEvent e_lookup;
-    start = gettime();
+   if (repeat<1) repeat=1;
+   start = gettime();
+   PerfEvent e_lookup;
    e_lookup.startCounters();
    for (uint64_t r=0;r<repeat;r++) {
       for (uint64_t i=0;i<n;i++) {
-         Node* leaf=lookup(tree,real_lookup_keys[i],8,0,8);
-//         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+         Node* leaf=lookup(tree,real_lookup_keys[i],4,0,4);
+         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
       }
    }
-    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
-    e_lookup.stopCounters();
-
 std::string output = "|";
 output += std::to_string(alpha) + ",";
 const double throughput = (n*repeat/1000000.0)/(gettime()-start);
 output += std::to_string(throughput) + ",";
+   printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
+   e_lookup.stopCounters();
 for (unsigned i=0; i<e_lookup.events.size(); i++) {
         if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" || e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
                 output += std::to_string(e_lookup.events[i].readCounter()/n) + ",";
