@@ -23,6 +23,7 @@ static const int8_t NodeType4=0;
 static const int8_t NodeType16=1;
 static const int8_t NodeType48=2;
 static const int8_t NodeType256=3;
+static const int8_t Leaf=4;
 
 // The maximum prefix length for compressed paths stored in the
 // header, if the path is longer it is loaded from the database on
@@ -357,6 +358,7 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
          newPrefixLength++;
 
       Node4* newNode=new Node4();
+//while(isLeaf(newNode)) newNode=new Node4();
       newNode->prefixLength=newPrefixLength;
       memcpy(newNode->prefix,key+depth,min(newPrefixLength,maxPrefixLength));
       *nodeRef=newNode;
@@ -372,7 +374,8 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       if (mismatchPos!=node->prefixLength) {
          // Prefix differs, create new node
          Node4* newNode=new Node4();
-         *nodeRef=newNode;
+//while(isLeaf(newNode)) newNode=new Node4();
+          *nodeRef=newNode;
          newNode->prefixLength=mismatchPos;
          memcpy(newNode->prefix,node->prefix,min(mismatchPos,maxPrefixLength));
          // Break up prefix
@@ -424,7 +427,8 @@ void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child) {
    } else {
       // Grow to Node16
       Node16* newNode=new Node16();
-      *nodeRef=newNode;
+//while(isLeaf(newNode)) newNode=new Node16();
+       *nodeRef=newNode;
       newNode->count=4;
       copyPrefix(node,newNode);
       for (unsigned i=0;i<4;i++)
@@ -451,6 +455,7 @@ void insertNode16(Node16* node,Node** nodeRef,uint8_t keyByte,Node* child) {
    } else {
       // Grow to Node48
       Node48* newNode=new Node48();
+//while(isLeaf(newNode)) newNode=new Node48();
       *nodeRef=newNode;
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
       for (unsigned i=0;i<node->count;i++)
@@ -475,7 +480,8 @@ void insertNode48(Node48* node,Node** nodeRef,uint8_t keyByte,Node* child) {
    } else {
       // Grow to Node256
       Node256* newNode=new Node256();
-      for (unsigned i=0;i<256;i++)
+//while(isLeaf(newNode)) newNode=new Node256();
+       for (unsigned i=0;i<256;i++)
          if (node->childIndex[i]!=48)
             newNode->child[i]=node->child[node->childIndex[i]];
       newNode->count=node->count;
@@ -710,6 +716,8 @@ int main(int argc,char** argv) {
                uint8_t key[4];loadKey(lookup_keys[i],key);
                Node* leaf=lookup(tree,key,4,0,8);
                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+               assert(isLeaf(leaf));
+               assert(getLeafValue(leaf)==lookup_keys[i]);
            }
        }
    }
@@ -730,7 +738,6 @@ int main(int argc,char** argv) {
    for (uint64_t r=0;r<repeat;r++) {
       for (uint64_t i=0;i<n;i++) {
          Node* leaf=lookup(tree,real_lookup_keys[i],4,0,4);
-         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
       }
    }
 std::string output = "|";
