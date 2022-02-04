@@ -1,5 +1,6 @@
 include_directories(include)
 include_directories(../third_party/perfevent)
+include_directories(../third_party/zipf)
 
 add_definitions(-DDUCKDB_ROOT_DIRECTORY="${PROJECT_SOURCE_DIR}")
 
