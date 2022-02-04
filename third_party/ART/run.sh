@@ -3,8 +3,8 @@
 output_file=output.dat
 rm -f $output_file
 touch $output_file
-g++ -O3 -o orginalART orginalART.cpp
-g++ -O3 -o ART ART.cpp -lnuma
+g++ -O3 -o orginalART orginalART.cpp  -march=native
+g++ -O3 -o ART ART.cpp -lnuma  -march=native
 
 for i in $(seq 0.0 0.2 3.0)
 do

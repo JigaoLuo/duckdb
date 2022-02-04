@@ -679,14 +679,16 @@ int main(int argc,char** argv) {
         /// just copy the key array :D
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
 
-//        std::random_device rd;
-//        std::mt19937 g(rd());
-//        std::shuffle(lookup_keys, lookup_keys + n, g);
+    /// Lookup 1 2 3 4 5 6: might hit the cache
+    /// To shuffle the input to be unsorted
+    //        std::random_device rd;
+    //        std::mt19937 g(rd());
+    //        std::shuffle(lookup_keys, lookup_keys + n, g);
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
         std::random_device rd;
         std::mt19937 gen(rd());
-        zipf_table_distribution<> zipf(n, alpha);
+        zipf_table_distribution<> zipf(n, alpha);  /// zipf distribution \in [1, n]
         std::vector<unsigned long> vec;
         std::set<unsigned long> set;
         for (int i = 0; i < n; ++i) {
