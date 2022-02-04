@@ -6,6 +6,6 @@ touch $output_file
 
 for i in $(seq 0.0 0.2 3.0)
 do
-  ../build/release/art_standalone/art_standalone 1000000 0 z $i >> $output_file # sorted
-#  ../build/release/art_standalone/art_standalone 1000000 2 z $i >> $output_file # sparse
+  ../build/release/art_standalone/art_standalone 1000000 0 z $i 2>&1 | tee $output_file # sorted
+#  ../build/release/art_standalone/art_standalone 1000000 2 z $i 2>&1 | tee $output_file # sparse
 done
