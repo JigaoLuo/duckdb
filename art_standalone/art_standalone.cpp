@@ -92,16 +92,14 @@ int main(int argc,char** argv) {
         printf("%lu,insert(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime() - start)) / 1000000.0);
 	}
 
-    /// Parse argv[3]
-    int iteration = 0;
-    if (argv[3][0]=='u') {
-        iteration = 30;
-    } else if (argv[3][0]=='z') {
-        iteration = 3.0 / 0.05;  // TODO: fix it
-    }
+
+    const int iteration = 10;
 
     /// Parse argv[4]
     const double alpha = atof(argv[4]);
+    std::cout << "alpha := " << alpha << std::endl;
+
+    /// Parse argv[3]
     if (argv[3][0] == 'u') {
         look_up_art_keys.clear();
         /// uniform distributed lookup == the original ART lookup procedure
