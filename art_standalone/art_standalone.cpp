@@ -20,7 +20,7 @@ static inline double gettime(void) {
 }
 
 int main(int argc,char** argv) {
-    if (argc!=4) {
+    if (argc!=5) {
         printf("usage: %s n 0|1|2 u|z alpha\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n"
                "u: uniform distributed lookup\nz: zipfian distributed lookup\n"
                "alpha: the factor of the zipfian distribution\n", argv[0]);
@@ -95,72 +95,73 @@ int main(int argc,char** argv) {
     /// Parse argv[3]
     int iteration = 0;
     if (argv[3][0]=='u') {
-        iteration = 1;
+        iteration = 30;
     } else if (argv[3][0]=='z') {
-        iteration = 3.0 / 0.05;
+        iteration = 3.0 / 0.05;  // TODO: fix it
     }
 
-    for (int i = 0; i < iteration; ++i) {
-        const double alpha = i * 0.05;
-        if (argv[3][0] == 'u') {
-            /// uniform distributed lookup == the original ART lookup procedure
-            /// just copy the key array :D
-            for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-                look_up_art_keys.push_back(
-                        Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
-            }
+    /// Parse argv[4]
+    const double alpha = atof(argv[4]);
+    if (argv[3][0] == 'u') {
+        look_up_art_keys.clear();
+        /// uniform distributed lookup == the original ART lookup procedure
+        /// just copy the key array :D
+        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+            look_up_art_keys.push_back(
+                    Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
+        }
 /// Lookup 1 2 3 4 5 6: might hit the cache
 /// To shuffle the input to be unsorted
 //        std::random_device rd;
 //        std::mt19937 g(rd());
 //        std::shuffle(lookup_keys, lookup_keys + n, g);
-        } else if (argv[3][0] == 'z') {
-            look_up_art_keys.clear();
-            /// zipfian distributed lookup
-            const int n = in_art_input_data.size();
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            zipf_table_distribution<> zipf(n, alpha);  /// zipf distribution \in [1, n]
-            std::vector<unsigned long> vec;
-            std::set<unsigned long> set;
-            for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+    } else if (argv[3][0] == 'z') {
+        look_up_art_keys.clear();
+        /// zipfian distributed lookup
+        const int n = in_art_input_data.size();
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        zipf_table_distribution<> zipf(n, alpha);  /// zipf distribution \in [1, n]
+        std::vector<unsigned long> vec;
+        std::set<unsigned long> set;
+        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
 //            for (int i = 0; i < n; ++i) {
-                const unsigned long zipf_gen_index = zipf(gen) - 1;
-                vec.emplace_back(zipf_gen_index);
-                set.emplace(zipf_gen_index);
-                look_up_art_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[zipf_gen_index],
-                                                                   index->is_little_endian));/// Fix zipfian distribution's value range to [0, n)
-            }
-            // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
-            // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+            const unsigned long zipf_gen_index = zipf(gen) - 1;
+            vec.emplace_back(zipf_gen_index);
+            set.emplace(zipf_gen_index);
+            look_up_art_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[zipf_gen_index],
+                                                               index->is_little_endian));/// Fix zipfian distribution's value range to [0, n)
         }
+        // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
+        // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+    }
 
-
-        {
-            /// LookupInputData: Warm Up
-            unsigned repeat = 100000000 / in_art_input_data.size();
-            if (repeat < 1) repeat = 1;
-            for (unsigned r = 0; r < repeat; ++r) {
-                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
-                                                                                          *in_art_keys[idx], 0));
-                }
-            }
-        }
-
-        {
-            /// LookupInputData: Warm Up
-            unsigned repeat = 100000000 / in_art_input_data.size();
-            if (repeat < 1) repeat = 1;
-            for (unsigned r = 0; r < repeat; ++r) {
-                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
-                                                                                          *look_up_art_keys[idx], 0));
-                }
-            }
-        }
+    for (int i = 0; i < iteration; ++i) {
+//        {
+//            /// LookupInputData: Warm Up
+//            unsigned repeat = 100000000 / in_art_input_data.size();
+//            if (repeat < 1) repeat = 1;
+//            for (unsigned r = 0; r < repeat; ++r) {
+//                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
+//                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+//                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
+//                                                                                          *in_art_keys[idx], 0));
+//                }
+//            }
+//        }
+//
+//        {
+//            /// LookupInputData: Warm Up
+//            unsigned repeat = 100000000 / in_art_input_data.size();
+//            if (repeat < 1) repeat = 1;
+//            for (unsigned r = 0; r < repeat; ++r) {
+//                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
+//                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+//                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
+//                                                                                          *look_up_art_keys[idx], 0));
+//                }
+//            }
+//        }
 
         {
             /// LookupInputData
