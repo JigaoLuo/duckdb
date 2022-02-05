@@ -174,8 +174,11 @@ int main(int argc,char** argv) {
             for (unsigned r = 0; r < repeat; ++r) {
                 // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
                 for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
-                                                                                          *look_up_art_keys[idx], 0));
+                    auto __attribute__((unused)) leaf = static_cast<volatile Leaf *>(index->Lookup(index->tree,*look_up_art_keys[idx], 0));
+                    *leaf;
+                    // Make sure the compiler doesn't compile away offset
+//                    *(volatile unsigned int *)(map + offset); TODO: rewrite this
+
                 }
             }
             printf("%lu,search(M operation/s),%f\n", in_art_input_data.size(),
