@@ -242,7 +242,7 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
    return NULL;
 }
 
-Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
+Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
    // Find the node with a matching key, alternative pessimistic version
 
    while (node!=NULL) {
@@ -624,16 +624,11 @@ int main(int argc,char** argv) {
    // Build tree
    double start = gettime();
    Node* tree=NULL;
-   // PerfEvent e;
-   // e.startCounters();
    for (uint64_t i=0;i<n;i++) {
       uint8_t key[8];loadKey(keys[i],key);
       insert(tree,&tree,key,0,keys[i],8);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-   // e.stopCounters();
-   // e.printReport(std::cout, n); // use n as scale factor
-   // std::cout << std::endl;
 
     /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
     uint64_t* lookup_keys=new uint64_t[n];
@@ -641,6 +636,12 @@ int main(int argc,char** argv) {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
+// TODO(jigao): try this
+/// Lookup 1 2 3 4 5 6: might hit the cache
+/// To shuffle the input to be unsorted
+//        std::random_device rd;
+//        std::mt19937 g(rd());
+//        std::shuffle(lookup_keys, lookup_keys + n, g);
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
         std::random_device rd;
@@ -654,48 +655,50 @@ int main(int argc,char** argv) {
             set.emplace(index);
             lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
         }
-        // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
-        // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+        std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
     }
 
-   // Repeat lookup for small trees to get reproducable results
-   uint64_t repeat=10000000/n;
-   if (repeat<1)
-      repeat=1;
-   start = gettime();
-   PerfEvent e_lookup;
-   e_lookup.startCounters();
-   for (uint64_t r=0;r<repeat;r++) {
-      for (uint64_t i=0;i<n;i++) {
-         uint8_t key[8];loadKey(lookup_keys[i],key);
-         Node* leaf=lookup(tree,key,8,0,8);
-         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
-      }
-   }
-std::string output = "|";
-output += std::to_string(alpha) + ",";
-const double throughput = (n*repeat/1000000.0)/(gettime()-start);
-output += std::to_string(throughput) + ",";
-   printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
-   e_lookup.stopCounters();
-   e_lookup.printReport(std::cout, n); // use n as scale factor
-   std::cout << std::endl;
+    int iteration = 5;
+    for (int i = 0; i < iteration; ++i) {
+        // Repeat lookup for small trees to get reproducable results
+        uint64_t repeat = 10000000 / n;
+        if (repeat < 1)
+            repeat = 1;
+        start = gettime();
+        PerfEvent e_lookup;
+        e_lookup.startCounters();
+        for (uint64_t r = 0; r < repeat; r++) {
+            for (uint64_t i = 0; i < n; i++) {
+                uint8_t key[8];
+                loadKey(lookup_keys[i], key);
+                Node *leaf = lookup(tree, key, 8, 0, 8);
+                assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
+            }
+        }
+        double end = gettime();
+        printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
+        e_lookup.stopCounters();
+        e_lookup.printReport(std::cout, n); // use n as scale factor
+        std::cout << std::endl;
 
-for (unsigned i=0; i<e_lookup.events.size(); i++) {
-    if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" || e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-        output += std::to_string(e_lookup.events[i].readCounter()/n) + ",";
+        std::string output = "|";
+        output += std::to_string(alpha) + ",";
+        const double throughput = (n * repeat / 1000000.0) / (end - start);
+        output += std::to_string(throughput) + ",";
+        double tlb_miss = 0;
+        for (unsigned i = 0; i < e_lookup.events.size(); i++) {
+            if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
+                e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
+                output += std::to_string(e_lookup.events[i].readCounter() / n) + ",";
+            }
+            if (e_lookup.names[i] == "dTLB-load-misses") {
+                tlb_miss = e_lookup.events[i].readCounter();
+            }
+        }
+        output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
+        output.pop_back();
+        std::cout << output << std::endl;
     }
-}
-output.pop_back();
-std::cout << output << std::endl;
-//   start = gettime();
-//   for (uint64_t i=0;i<n;i++) {
-//      uint8_t key[8];loadKey(keys[i],key);
-//      erase(tree,&tree,key,8,0,8);
-//   }
-//   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-//   assert(tree==NULL);
-
    delete [] keys;
    return 0;
 }
