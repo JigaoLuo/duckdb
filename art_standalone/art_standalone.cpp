@@ -132,6 +132,7 @@ int main(int argc,char** argv) {
         }
         std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
     }
+    std::random_shuffle(look_up_art_keys.begin(), look_up_art_keys.end());
 
     for (int i = 0; i < iteration; ++i) {
 //        {
