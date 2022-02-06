@@ -187,22 +187,20 @@ int main(int argc,char** argv) {
 
             std::string output = "|";
             output += std::to_string(alpha) + ",";
-            const double throughput = (n * repeat / 1000000.0) / (gettime() - start);
+            double end = gettime();
+            const double throughput = (n * repeat / 1000000.0) / (end - start);
             output += std::to_string(throughput) + ",";
-            double cycles = 0;
             double tlb_miss = 0;
             for (unsigned i = 0; i < e.events.size(); i++) {
                 if (e.names[i] == "cycles" || e.names[i] == "L1-misses" || e.names[i] == "LLC-misses" ||
                     e.names[i] == "dTLB-load-misses") {
                     output += std::to_string(e.events[i].readCounter() / n) + ",";
                 }
-                if (e.names[i] == "cycles") {
-                    cycles = e.events[i].readCounter();
-                } else if (e.names[i] == "dTLB-load-misses") {
+                if (e.names[i] == "dTLB-load-misses") {
                     tlb_miss = e.events[i].readCounter();
                 }
             }
-            output += std::to_string(100 * tlb_miss / cycles) + ",";
+            output += std::to_string(100 * tlb_miss / (end - start)) + ",";
             output.pop_back();
             std::cout << output << std::endl;
             e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
