@@ -164,7 +164,7 @@ int main(int argc,char** argv) {
             /// LookupInputData
 //        unsigned repeat = 100000000 / in_art_input_data.size();
 //        if (repeat < 1) repeat = 1;
-            unsigned repeat = 1;
+            unsigned repeat = 1; // TODO: rethink or remove it
             const int n = in_art_input_data.size();
 //unsigned repeat = 10; // TODO: :D
             double start = gettime();
@@ -194,13 +194,13 @@ int main(int argc,char** argv) {
             for (unsigned i = 0; i < e.events.size(); i++) {
                 if (e.names[i] == "cycles" || e.names[i] == "L1-misses" || e.names[i] == "LLC-misses" ||
                     e.names[i] == "dTLB-load-misses") {
-                    output += std::to_string(e.events[i].readCounter() / n) + ",";
+                    output += std::to_string(e.events[i].readCounter() / n / repeat) + ",";
                 }
                 if (e.names[i] == "dTLB-load-misses") {
                     tlb_miss = e.events[i].readCounter();
                 }
             }
-            output += std::to_string(100 * tlb_miss / ( (end - start) * 1000000 )) + ",";
+            output += std::to_string( 100.0 * tlb_miss / ( (end - start) * 1000000000.0 )) + ",";
             output.pop_back();
             std::cout << output << std::endl;
             e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
