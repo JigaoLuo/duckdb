@@ -130,8 +130,8 @@ int main(int argc,char** argv) {
             look_up_art_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[zipf_gen_index],
                                                                index->is_little_endian));/// Fix zipfian distribution's value range to [0, n)
         }
-        // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
-        // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+         std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
+         std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
     }
 
     for (int i = 0; i < iteration; ++i) {
