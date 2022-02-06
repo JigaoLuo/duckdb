@@ -673,12 +673,6 @@ int main(int argc,char** argv) {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
-// TODO(jigao): try this
-/// Lookup 1 2 3 4 5 6: might hit the cache
-/// To shuffle the input to be unsorted
-//        std::random_device rd;
-//        std::mt19937 g(rd());
-//        std::shuffle(lookup_keys, lookup_keys + n, g);
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
         std::random_device rd;
@@ -694,7 +688,7 @@ int main(int argc,char** argv) {
         }
          std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
     }
-
+    std::random_shuffle(lookup_keys, lookup_keys + n);
 
     // TODO(jigao): try without it
     std::vector<uint8_t*> real_lookup_keys;
