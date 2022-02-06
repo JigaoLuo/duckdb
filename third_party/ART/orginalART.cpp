@@ -706,14 +706,14 @@ int main(int argc,char** argv) {
 //   uint64_t repeat=10000000/n;
         uint64_t repeat = 10;
         if (repeat < 1) repeat = 1;
-        int output = 0;
+        int leafoutput = 0;
         PerfEvent e_lookup;
         start = gettime();
         e_lookup.startCounters();
         for (uint64_t r = 0; r < repeat; r++) {
             for (uint64_t i = 0; i < n; i++) {
                 Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8);
-                output += leaf->type;
+                leafoutput += leaf->type;
 //         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
         }
@@ -722,7 +722,7 @@ int main(int argc,char** argv) {
         e_lookup.stopCounters();
         e_lookup.printReport(std::cout, n); // use n as scale factor
         std::cout << std::endl;
-        std::cout << "output " << output << std::endl;
+        std::cout << "leafoutput " << leafoutput << std::endl;
 
         std::string output = "|";
         output += std::to_string(alpha) + ",";
