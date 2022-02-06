@@ -200,7 +200,7 @@ int main(int argc,char** argv) {
                     tlb_miss = e.events[i].readCounter();
                 }
             }
-            output += std::to_string(100 * tlb_miss / (end - start)) + ",";
+            output += std::to_string(tlb_miss / (end - start) / 1000 ) + ",";
             output.pop_back();
             std::cout << output << std::endl;
             e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
