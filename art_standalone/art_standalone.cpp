@@ -11,6 +11,10 @@
 #include <string>
 #include <set>
 
+/// https://stackoverflow.com/questions/19310541/having-trouble-compiling-c-code-on-ubuntu-include-errors
+/// https://stackoverflow.com/questions/23224607/how-do-i-include-linux-header-files-like-linux-getcpu-h
+#include "/usr/src/linux-headers-5.3.0-62/arch/x86/include/asm/page.h"
+
 using namespace duckdb;
 
 static inline double gettime(void) {
@@ -108,11 +112,6 @@ int main(int argc,char** argv) {
             look_up_art_keys.push_back(
                     Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
         }
-/// Lookup 1 2 3 4 5 6: might hit the cache
-/// To shuffle the input to be unsorted
-//        std::random_device rd;
-//        std::mt19937 g(rd());
-//        std::shuffle(lookup_keys, lookup_keys + n, g);
     } else if (argv[3][0] == 'z') {
         look_up_art_keys.clear();
         /// zipfian distributed lookup
@@ -177,8 +176,8 @@ int main(int argc,char** argv) {
                 for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
                     auto leaf = static_cast<Leaf *>(index->Lookup(index->tree,*look_up_art_keys[idx], 0));
                     // TODO: return value is in EAX
-                    cap += leaf->capacity; // Make sure the compiler doesn't compile away leaf
-                    cap += leaf->num_elements; // Make sure the compiler doesn't compile away leaf
+//                    cap += leaf->capacity; // Make sure the compiler doesn't compile away leaf
+//                    cap += leaf->num_elements; // Make sure the compiler doesn't compile away leaf
                 }
             }
             std::cout << cap << std::endl; // Make sure the compiler doesn't compile away leaf
@@ -190,12 +189,20 @@ int main(int argc,char** argv) {
             output += std::to_string(alpha) + ",";
             const double throughput = (n * repeat / 1000000.0) / (gettime() - start);
             output += std::to_string(throughput) + ",";
+            double cycles = 0;
+            double tlb_miss = 0;
             for (unsigned i = 0; i < e.events.size(); i++) {
                 if (e.names[i] == "cycles" || e.names[i] == "L1-misses" || e.names[i] == "LLC-misses" ||
                     e.names[i] == "dTLB-load-misses") {
                     output += std::to_string(e.events[i].readCounter() / n) + ",";
                 }
+                if (e.names[i] == "cycles") {
+                    cycles = e.events[i].readCounter();
+                } else if (e.names[i] == "dTLB-load-misses") {
+                    tlb_miss = e.events[i].readCounter();
+                }
             }
+            output += std::to_string(100 * tlb_miss / cycles) + ",";
             output.pop_back();
             std::cout << output << std::endl;
             e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
