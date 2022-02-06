@@ -134,32 +134,6 @@ int main(int argc,char** argv) {
     std::random_shuffle(look_up_art_keys.begin(), look_up_art_keys.end());
 
     for (int i = 0; i < iteration; ++i) {
-//        {
-//            /// LookupInputData: Warm Up
-//            unsigned repeat = 100000000 / in_art_input_data.size();
-//            if (repeat < 1) repeat = 1;
-//            for (unsigned r = 0; r < repeat; ++r) {
-//                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-//                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-//                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
-//                                                                                          *in_art_keys[idx], 0));
-//                }
-//            }
-//        }
-//
-//        {
-//            /// LookupInputData: Warm Up
-//            unsigned repeat = 100000000 / in_art_input_data.size();
-//            if (repeat < 1) repeat = 1;
-//            for (unsigned r = 0; r < repeat; ++r) {
-//                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-//                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-//                    auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree,
-//                                                                                          *look_up_art_keys[idx], 0));
-//                }
-//            }
-//        }
-
         {
             /// LookupInputData
 //        unsigned repeat = 100000000 / in_art_input_data.size();
