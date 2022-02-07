@@ -12,5 +12,5 @@ do
 #  ./orginalART 1000000 2 z $i 2>&1 | tee -a $output_file # sparse
 #  ./ART 10000000 0 z $i 2>&1 | tee -a $output_file # sorted
 #  ./ART 10000000 0 z $i 2>&1 | tee -a $output_file # sparse
-  echo "================================================================================"
+  echo "================================================================================" 2>&1 | tee -a $output_file
 done
