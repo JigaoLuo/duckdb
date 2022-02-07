@@ -14,6 +14,7 @@
 #include <algorithm>   // std::random_shuffle
 #include <vector>
 #include <set>
+#include <unordered_set>
 #include <iostream>
 #include <cstring>
 #include <random>
@@ -308,7 +309,7 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
    return NULL;
 }
 
-Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
+Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength, std::unordered_set<Node*>& add) {  //TODO(jigao): try this!!!
    // Find the node with a matching key, alternative pessimistic version
 
    while (node!=NULL) {
@@ -324,6 +325,9 @@ Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned dep
 
       node=*findChild(node,key[depth]);
       depth++;
+if (!isLeaf(node) && node != NULL) {
+    add.emplace(node);
+}
    }
 
    return NULL;
@@ -713,10 +717,11 @@ int main(int argc,char** argv) {
         PerfEvent e_lookup;
         start = gettime();
         e_lookup.startCounters();
+std::unordered_set<Node*> add;
         for (uint64_t r = 0; r < repeat; r++) {
             for (uint64_t i = 0; i < n; i++) {
 //                Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
-                Node *leaf = lookupPessimistic(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
+                Node *leaf = lookupPessimistic(tree, real_lookup_keys[i], 8, 0, 8, add); /// leaf is just a madeup pointer
                 leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
                 //         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
@@ -745,6 +750,7 @@ int main(int argc,char** argv) {
         output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
         output.pop_back();
         std::cout << output << std::endl;
+std::cout << "# inner nodes add: " << add.size() << std::endl;
     }
 
     for (uint64_t i=0;i<n;i++) {
