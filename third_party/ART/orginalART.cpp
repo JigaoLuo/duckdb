@@ -43,7 +43,10 @@ struct Node {
    // compressed path (prefix)
    uint8_t prefix[maxPrefixLength];
 
-   Node(int8_t type) : prefixLength(0),count(0),type(type) {}
+uint8_t bala[4096];
+
+
+    Node(int8_t type) : prefixLength(0),count(0),type(type) {}
 };
 
 // Node with up to 4 children
