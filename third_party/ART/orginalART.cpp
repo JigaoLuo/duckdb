@@ -43,7 +43,7 @@ struct Node {
    // compressed path (prefix)
    uint8_t prefix[maxPrefixLength];
 
-uint8_t bala[4096];
+uint8_t bala[4096]//TODO: delete this
 
 
     Node(int8_t type) : prefixLength(0),count(0),type(type) {}
@@ -715,7 +715,8 @@ int main(int argc,char** argv) {
         e_lookup.startCounters();
         for (uint64_t r = 0; r < repeat; r++) {
             for (uint64_t i = 0; i < n; i++) {
-                Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
+//                Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
+                Node *leaf = lookupPessimistic(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
                 leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
                 //         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
