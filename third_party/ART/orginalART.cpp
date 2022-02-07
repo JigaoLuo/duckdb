@@ -43,7 +43,7 @@ struct Node {
    // compressed path (prefix)
    uint8_t prefix[maxPrefixLength];
 
-uint8_t bala[4096]//TODO: delete this
+uint8_t bala[4096];//TODO: delete this
 
 
     Node(int8_t type) : prefixLength(0),count(0),type(type) {}
