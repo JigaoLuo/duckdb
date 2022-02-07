@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <sys/time.h>  // gettime
 #include <algorithm>   // std::random_shuffle
+#include "../../perfevent/PerfEvent.hpp"
 
 // Constants for the node types
 static const int8_t NodeType4=0;
@@ -662,6 +663,7 @@ int main(int argc,char** argv) {
    uint64_t repeat=10000000/n;
    if (repeat<1)
       repeat=1;
+   PerfEvent e_lookup;
    start = gettime();
    for (uint64_t r=0;r<repeat;r++) {
       for (uint64_t i=0;i<n;i++) {
@@ -671,6 +673,8 @@ int main(int argc,char** argv) {
       }
    }
    printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
+   e_lookup.stopCounters();
+   e_lookup.printReport(std::cout, n); // use n as scale factor
 
    start = gettime();
    for (uint64_t i=0;i<n;i++) {
