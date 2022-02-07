@@ -698,8 +698,6 @@ int main(int argc,char** argv) {
         }
          std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
     }
-    std::random_shuffle(lookup_keys, lookup_keys + n);
-
     // TODO(jigao): try without it
     std::vector<uint8_t*> real_lookup_keys;
     for (uint64_t i=0;i<n;i++) {
@@ -707,7 +705,16 @@ int main(int argc,char** argv) {
         loadKey(lookup_keys[i],key);
         real_lookup_keys.push_back(key);
     }
+    /// Before shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
+//    }
     std::random_shuffle(real_lookup_keys.begin(), real_lookup_keys.end());
+    /// After shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
+//    }
+
 
     int iteration = 5;
     for (int i = 0; i < iteration; ++i) {
