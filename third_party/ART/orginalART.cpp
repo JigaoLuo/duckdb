@@ -706,15 +706,15 @@ int main(int argc,char** argv) {
 //   uint64_t repeat=10000000/n;
         uint64_t repeat = 10;
         if (repeat < 1) repeat = 1;
-        int leafoutput = 0;
+        uint64_t leafoutput = 0;
         PerfEvent e_lookup;
         start = gettime();
         e_lookup.startCounters();
         for (uint64_t r = 0; r < repeat; r++) {
             for (uint64_t i = 0; i < n; i++) {
-                Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8);
-                leafoutput += leaf->type;
-//         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+                Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
+                leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
+                //         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
         }
         double end = gettime();
