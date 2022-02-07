@@ -707,7 +707,7 @@ int main(int argc,char** argv) {
         loadKey(lookup_keys[i],key);
         real_lookup_keys.push_back(key);
     }
-    std::random_shuffle(real_lookup_keys, real_lookup_keys + n);
+    std::random_shuffle(real_lookup_keys.begin(), real_lookup_keys.end());
 
     int iteration = 5;
     for (int i = 0; i < iteration; ++i) {
