@@ -44,7 +44,7 @@ struct Node {
    // compressed path (prefix)
    uint8_t prefix[maxPrefixLength];
 
-uint8_t bala[4096];//TODO: delete this
+//uint8_t bala[4096];//TODO(jigao): delete this, if not counting # pointers or pages
 
 
     Node(int8_t type) : prefixLength(0),count(0),type(type) {}
@@ -309,7 +309,8 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
    return NULL;
 }
 
-Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength, std::unordered_set<Node*>& add) {  //TODO(jigao): try this!!!
+Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
+//Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength, std::unordered_set<Node*>& add) {  //TODO(jigao): try this!!! //TODO(jigao): delete this, if not counting # pointers or pages
    // Find the node with a matching key, alternative pessimistic version
 
    while (node!=NULL) {
@@ -325,9 +326,9 @@ Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned dep
 
       node=*findChild(node,key[depth]);
       depth++;
-if (!isLeaf(node) && node != NULL) {
-    add.emplace(node);
-}
+//if (!isLeaf(node) && node != NULL) {
+//    add.emplace(node);
+//}
    }
 
    return NULL;
@@ -698,18 +699,17 @@ int main(int argc,char** argv) {
         }
          std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
     }
-    // TODO(jigao): try without it
-    std::vector<uint8_t*> real_lookup_keys;
+    /// Before shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;
+//    }
+    std::random_shuffle(lookup_keys, lookup_keys + n);
+//    std::vector<uint8_t*> real_lookup_keys;
     for (uint64_t i=0;i<n;i++) {
         uint8_t* key=new uint8_t[8];
         loadKey(lookup_keys[i],key);
-        real_lookup_keys.push_back(key);
+//        real_lookup_keys.push_back(key);  /// Not used.
     }
-    /// Before shuffle
-//    for (uint64_t i=0;i<n;i++) {
-//        std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
-//    }
-    std::random_shuffle(real_lookup_keys.begin(), real_lookup_keys.end());
     /// After shuffle
 //    for (uint64_t i=0;i<n;i++) {
 //        std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
@@ -725,19 +725,21 @@ int main(int argc,char** argv) {
         PerfEvent e_lookup;
         start = gettime();
         e_lookup.startCounters();
-std::unordered_set<Node*> add;
+//std::unordered_set<Node*> add; //TODO(jigao): delete this, if not counting # pointers or pages
         for (uint64_t r = 0; r < repeat; r++) {
             for (uint64_t i = 0; i < n; i++) {
-//                Node *leaf = lookup(tree, real_lookup_keys[i], 8, 0, 8); /// leaf is just a madeup pointer
-                Node *leaf = lookupPessimistic(tree, real_lookup_keys[i], 8, 0, 8, add); /// leaf is just a madeup pointer
+                uint8_t key[8];
+                loadKey(lookup_keys[i],key);
+                Node *leaf = lookup(tree, key, 8, 0, 8); /// leaf is just a madeup pointer
+//                Node *leaf = lookupPessimistic(tree, real_lookup_keys[i], 8, 0, 8, add); //TODO(jigao): delete this, if not counting # pointers or pages
                 leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
-                //         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+//                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
         }
         double end = gettime();
         printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
         e_lookup.stopCounters();
-        e_lookup.printReport(std::cout, n); // use n as scale factor
+        e_lookup.printReport(std::cout, n * repeat); // use n as scale factor
         std::cout << std::endl;
         std::cout << "leafoutput " << leafoutput << std::endl;
 
@@ -749,7 +751,7 @@ std::unordered_set<Node*> add;
         for (unsigned i = 0; i < e_lookup.events.size(); i++) {
             if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
                 e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-                output += std::to_string(e_lookup.events[i].readCounter() / n) + ",";
+                output += std::to_string(e_lookup.events[i].readCounter() / (n * repeat)) + ",";
             }
             if (e_lookup.names[i] == "dTLB-load-misses") {
                 tlb_miss = e_lookup.events[i].readCounter();
@@ -758,12 +760,10 @@ std::unordered_set<Node*> add;
         output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
         output.pop_back();
         std::cout << output << std::endl;
-std::cout << "# inner nodes add: " << add.size() << std::endl;
+//std::cout << "# inner nodes add: " << add.size() << std::endl; //TODO(jigao): delete this, if not counting # pointers or pages
     }
 
-    for (uint64_t i=0;i<n;i++) {
-        delete(real_lookup_keys[i]);
-    }
+//    for (uint64_t i=0;i<n;i++) delete(real_lookup_keys[i]);
 
    return 0;
 }
