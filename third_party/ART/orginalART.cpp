@@ -703,6 +703,18 @@ int main(int argc,char** argv) {
 //    for (uint64_t i=0;i<n;i++) {
 //        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;
 //    }
+    std::sort(lookup_keys, lookup_keys + n); ///
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> uni_distrib(1, n);
+    for (uint64_t i=0;i<n;) {
+        const uint64_t before = lookup_keys[i];
+        const uint64_t after = static_cast<uint64_t>(uni_distrib(gen));
+        while (lookup_keys[i] == before) {
+            lookup_keys[i] = after;
+            ++i;
+        }
+    }
     std::random_shuffle(lookup_keys, lookup_keys + n);
 //    std::vector<uint8_t*> real_lookup_keys;
     for (uint64_t i=0;i<n;i++) {
@@ -712,11 +724,11 @@ int main(int argc,char** argv) {
     }
     /// After shuffle
 //    for (uint64_t i=0;i<n;i++) {
-//        std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;  // std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
 //    }
 
 
-    int iteration = 5;
+    int iteration = 10;
     for (int i = 0; i < iteration; ++i) {
 //   uint64_t repeat=10000000/n;
         uint64_t repeat = 10;
@@ -731,7 +743,7 @@ int main(int argc,char** argv) {
                 uint8_t key[8];
                 loadKey(lookup_keys[i],key);
                 Node *leaf = lookup(tree, key, 8, 0, 8); /// leaf is just a madeup pointer
-//                Node *leaf = lookupPessimistic(tree, real_lookup_keys[i], 8, 0, 8, add); //TODO(jigao): delete this, if not counting # pointers or pages
+//                Node *leaf = lookupPessimistic(tree, key, 8, 0, 8, add); //TODO(jigao): delete this, if not counting # pointers or pages
                 leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
 //                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
