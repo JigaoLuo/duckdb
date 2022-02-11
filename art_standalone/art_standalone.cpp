@@ -148,7 +148,8 @@ int main(int argc,char** argv) {
             for (unsigned r = 0; r < repeat; ++r) {
                 // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
                 for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-                    auto leaf = static_cast<Leaf *>(index->Lookup(index->tree,*look_up_art_keys[idx], 0));
+                    index->Lookup(index->tree,*look_up_art_keys[idx], 0);
+                    /// This return value's memory is anyway access in the Lookup function itself.
                     // TODO: return value is in EAX
 //                    cap += leaf->capacity; // Make sure the compiler doesn't compile away leaf
 //                    cap += leaf->num_elements; // Make sure the compiler doesn't compile away leaf
