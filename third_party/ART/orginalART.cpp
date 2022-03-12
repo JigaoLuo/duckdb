@@ -139,6 +139,48 @@ static inline unsigned ctz(uint16_t x) {
 #endif
 }
 
+
+void traversal(Node* n, std::vector<Node*>& res) {
+    if (n == nullptr) return;
+    if (isLeaf(n)) return;
+    res.push_back(n);
+    switch (n->type) {
+        case NodeType4: {
+            Node4* node=static_cast<Node4*>(n);
+            for (unsigned i=0;i<node->count;i++) {
+                traversal(node->child[i], res);
+            }
+            return;
+        }
+        case NodeType16: {
+            Node16* node=static_cast<Node16*>(n);
+            for (unsigned i=0;i<node->count;i++) {
+                traversal(node->child[i], res);
+            }
+            return;
+        }
+        case NodeType48: {
+            Node48* node=static_cast<Node48*>(n);
+            for (unsigned i=0;i<48;i++) {
+                if (node->childIndex[i]!=emptyMarker) {
+                    traversal(node->child[node->childIndex[i]], res);
+                }
+            }
+            return;
+        }
+        case NodeType256: {
+            Node256* node=static_cast<Node256*>(n);
+            for (unsigned i=0;i<256;i++) {
+                if (node->child[i] != 0) {
+                    traversal(node->child[i], res);
+                }
+            }
+            return;
+        }
+    }
+}
+
+
 Node** findChild(Node* n,uint8_t keyByte) {
    // Find the next child for the keyByte
    switch (n->type) {
@@ -510,141 +552,6 @@ void insertNode256(Node256* node,Node** nodeRef,uint8_t keyByte,Node* child) {
    node->child[keyByte]=child;
 }
 
-//// Forward references
-//void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace);
-//void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace);
-//void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte);
-//void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte);
-//
-//void erase(Node* node,Node** nodeRef,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
-//   // Delete a leaf from a tree
-//
-//   if (!node)
-//      return;
-//
-//   if (isLeaf(node)) {
-//      // Make sure we have the right leaf
-//      if (leafMatches(node,key,keyLength,depth,maxKeyLength))
-//         *nodeRef=NULL;
-//      return;
-//   }
-//
-//   // Handle prefix
-//   if (node->prefixLength) {
-//      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
-//         return;
-//      depth+=node->prefixLength;
-//   }
-//
-//   Node** child=findChild(node,key[depth]);
-//   if (isLeaf(*child)&&leafMatches(*child,key,keyLength,depth,maxKeyLength)) {
-//      // Leaf found, delete it in inner node
-//      switch (node->type) {
-//         case NodeType4: eraseNode4(static_cast<Node4*>(node),nodeRef,child); break;
-//         case NodeType16: eraseNode16(static_cast<Node16*>(node),nodeRef,child); break;
-//         case NodeType48: eraseNode48(static_cast<Node48*>(node),nodeRef,key[depth]); break;
-//         case NodeType256: eraseNode256(static_cast<Node256*>(node),nodeRef,key[depth]); break;
-//      }
-//   } else {
-//      //Recurse
-//      erase(*child,child,key,keyLength,depth+1,maxKeyLength);
-//   }
-//}
-//
-//void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace) {
-//   // Delete leaf from inner node
-//   unsigned pos=leafPlace-node->child;
-//   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
-//   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
-//   node->count--;
-//
-//   if (node->count==1) {
-//      // Get rid of one-way node
-//      Node* child=node->child[0];
-//      if (!isLeaf(child)) {
-//         // Concantenate prefixes
-//         unsigned l1=node->prefixLength;
-//         if (l1<maxPrefixLength) {
-//            node->prefix[l1]=node->key[0];
-//            l1++;
-//         }
-//         if (l1<maxPrefixLength) {
-//            unsigned l2=min(child->prefixLength,maxPrefixLength-l1);
-//            memcpy(node->prefix+l1,child->prefix,l2);
-//            l1+=l2;
-//         }
-//         // Store concantenated prefix
-//         memcpy(child->prefix,node->prefix,min(l1,maxPrefixLength));
-//         child->prefixLength+=node->prefixLength+1;
-//      }
-//      *nodeRef=child;
-//      delete node;
-//   }
-//}
-//
-//void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace) {
-//   // Delete leaf from inner node
-//   unsigned pos=leafPlace-node->child;
-//   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
-//   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
-//   node->count--;
-//
-//   if (node->count==3) {
-//      // Shrink to Node4
-//      Node4* newNode=new Node4();
-//      newNode->count=node->count;
-//      copyPrefix(node,newNode);
-//      for (unsigned i=0;i<4;i++)
-//         newNode->key[i]=flipSign(node->key[i]);
-//      memcpy(newNode->child,node->child,sizeof(uintptr_t)*4);
-//      *nodeRef=newNode;
-//      delete node;
-//   }
-//}
-//
-//void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte) {
-//   // Delete leaf from inner node
-//   node->child[node->childIndex[keyByte]]=NULL;
-//   node->childIndex[keyByte]=emptyMarker;
-//   node->count--;
-//
-//   if (node->count==12) {
-//      // Shrink to Node16
-//      Node16 *newNode=new Node16();
-//      *nodeRef=newNode;
-//      copyPrefix(node,newNode);
-//      for (unsigned b=0;b<256;b++) {
-//         if (node->childIndex[b]!=emptyMarker) {
-//            newNode->key[newNode->count]=flipSign(b);
-//            newNode->child[newNode->count]=node->child[node->childIndex[b]];
-//            newNode->count++;
-//         }
-//      }
-//      delete node;
-//   }
-//}
-//
-//void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte) {
-//   // Delete leaf from inner node
-//   node->child[keyByte]=NULL;
-//   node->count--;
-//
-//   if (node->count==37) {
-//      // Shrink to Node48
-//      Node48 *newNode=new Node48();
-//      *nodeRef=newNode;
-//      copyPrefix(node,newNode);
-//      for (unsigned b=0;b<256;b++) {
-//         if (node->child[b]) {
-//            newNode->childIndex[b]=newNode->count;
-//            newNode->child[newNode->count]=node->child[b];
-//            newNode->count++;
-//         }
-//      }
-//      delete node;
-//   }
-//}
-
 static double gettime(void) {
   struct timeval now_tv;
   gettimeofday (&now_tv,NULL);
@@ -780,7 +687,41 @@ int main(int argc,char** argv) {
         std::cout << output << std::endl;
     }
 
-    for (uint64_t i=0;i<n;i++) delete(real_lookup_keys[i]);
+
+    std::vector<Node*> res;
+    traversal(tree, res);
+    std::cout << "size: " << res.size() << std::endl;
+
+    size_t node4_num = 0;
+    size_t node16_num = 0;
+    size_t node48_num = 0;
+    size_t node256_num = 0;
+    for (const auto& n : res) {
+        switch (n->type) {
+            case NodeType4: {
+                ++node4_num;
+                break;
+            }
+            case NodeType16: {
+                ++node16_num;
+                break;
+            }
+            case NodeType48: {
+                ++node48_num;
+                break;
+            }
+            case NodeType256: {
+                ++node256_num;
+                break;
+            }
+        }
+    }
+    std::cout << "node4_num:" << node4_num << std::endl;
+    std::cout << "node16_num:" << node16_num << std::endl;
+    std::cout << "node48_num:" << node48_num << std::endl;
+    std::cout << "node256_num:" << node256_num << std::endl;
+
+//    for (uint64_t i=0;i<n;i++) delete(real_lookup_keys[i]);
 
    return 0;
 }
