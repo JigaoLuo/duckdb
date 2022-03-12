@@ -4,7 +4,7 @@
   leis@in.tum.de
  */
 
-#include <stdlib.h>    // malloc, free
+#include <cstdlib>    // malloc, free
 #include <string.h>    // memset, memcpy
 #include <stdint.h>    // integer types
 #include <emmintrin.h> // x86 SSE intrinsics
@@ -14,8 +14,16 @@
 #include <algorithm>   // std::random_shuffle
 #include <vector>
 #include <set>
+#include <map>
+#include <unordered_set>
+#include <unordered_map>
+#include <iostream>
+#include <cstring>
+#include <random>
 
-#include "../allocator/mmap_allocator.hpp"
+#include <unistd.h>
+#include <stdint.h>
+
 #include "../perfevent/PerfEvent.hpp"
 #include "../zipf/zipf_table_distribution.hpp"
 
@@ -41,7 +49,7 @@ struct Node {
    // compressed path (prefix)
    uint8_t prefix[maxPrefixLength];
 
-   Node(int8_t type) : prefixLength(0),count(0),type(type) {}
+    Node(int8_t type) : prefixLength(0),count(0),type(type) {}
 };
 
 // Node with up to 4 children
@@ -303,26 +311,35 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
    return NULL;
 }
 
-Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
-   // Find the node with a matching key, alternative pessimistic version
-
-   while (node!=NULL) {
-      if (isLeaf(node)) {
-         if (leafMatches(node,key,keyLength,depth,maxKeyLength))
-            return node;
-         return NULL;
-      }
-
-      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
-         return NULL; else
-         depth+=node->prefixLength;
-
-      node=*findChild(node,key[depth]);
-      depth++;
-   }
-
-   return NULL;
-}
+////Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
+//Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength, std::unordered_set<uintptr_t>& add, std::vector<int>& tree_depth, std::unordered_map<Node*, int>& nodes) {  //TODO(jigao): try this!!! //TODO(jigao): delete this, if not counting # pointers or pages
+//   // Find the node with a matching key, alternative pessimistic version
+//
+//int tree_depth_ = 0;
+//   while (node!=NULL) {
+//      if (isLeaf(node)) {
+//         if (leafMatches(node,key,keyLength,depth,maxKeyLength)) {
+// tree_depth.push_back(tree_depth_);
+//             return node;
+//         }
+//         return NULL;
+//      }
+//
+//tree_depth_++;
+//nodes[node] = tree_depth_;
+//if (!isLeaf(node) && node != NULL) {
+//   add.emplace( ( reinterpret_cast<uintptr_t>( node ) / getpagesize() ) );
+//}
+//      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
+//         return NULL; else
+//         depth+=node->prefixLength;
+//
+//      node=*findChild(node,key[depth]);
+//      depth++;
+//   }
+//
+//   return NULL;
+//}
 
 // Forward references
 void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child);
@@ -493,140 +510,140 @@ void insertNode256(Node256* node,Node** nodeRef,uint8_t keyByte,Node* child) {
    node->child[keyByte]=child;
 }
 
-// Forward references
-void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace);
-void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace);
-void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte);
-void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte);
-
-void erase(Node* node,Node** nodeRef,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
-   // Delete a leaf from a tree
-
-   if (!node)
-      return;
-
-   if (isLeaf(node)) {
-      // Make sure we have the right leaf
-      if (leafMatches(node,key,keyLength,depth,maxKeyLength))
-         *nodeRef=NULL;
-      return;
-   }
-
-   // Handle prefix
-   if (node->prefixLength) {
-      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
-         return;
-      depth+=node->prefixLength;
-   }
-
-   Node** child=findChild(node,key[depth]);
-   if (isLeaf(*child)&&leafMatches(*child,key,keyLength,depth,maxKeyLength)) {
-      // Leaf found, delete it in inner node
-      switch (node->type) {
-         case NodeType4: eraseNode4(static_cast<Node4*>(node),nodeRef,child); break;
-         case NodeType16: eraseNode16(static_cast<Node16*>(node),nodeRef,child); break;
-         case NodeType48: eraseNode48(static_cast<Node48*>(node),nodeRef,key[depth]); break;
-         case NodeType256: eraseNode256(static_cast<Node256*>(node),nodeRef,key[depth]); break;
-      }
-   } else {
-      //Recurse
-      erase(*child,child,key,keyLength,depth+1,maxKeyLength);
-   }
-}
-
-void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace) {
-   // Delete leaf from inner node
-   unsigned pos=leafPlace-node->child;
-   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
-   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
-   node->count--;
-
-   if (node->count==1) {
-      // Get rid of one-way node
-      Node* child=node->child[0];
-      if (!isLeaf(child)) {
-         // Concantenate prefixes
-         unsigned l1=node->prefixLength;
-         if (l1<maxPrefixLength) {
-            node->prefix[l1]=node->key[0];
-            l1++;
-         }
-         if (l1<maxPrefixLength) {
-            unsigned l2=min(child->prefixLength,maxPrefixLength-l1);
-            memcpy(node->prefix+l1,child->prefix,l2);
-            l1+=l2;
-         }
-         // Store concantenated prefix
-         memcpy(child->prefix,node->prefix,min(l1,maxPrefixLength));
-         child->prefixLength+=node->prefixLength+1;
-      }
-      *nodeRef=child;
-      delete node;
-   }
-}
-
-void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace) {
-   // Delete leaf from inner node
-   unsigned pos=leafPlace-node->child;
-   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
-   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
-   node->count--;
-
-   if (node->count==3) {
-      // Shrink to Node4
-      Node4* newNode=new Node4();
-      newNode->count=node->count;
-      copyPrefix(node,newNode);
-      for (unsigned i=0;i<4;i++)
-         newNode->key[i]=flipSign(node->key[i]);
-      memcpy(newNode->child,node->child,sizeof(uintptr_t)*4);
-      *nodeRef=newNode;
-      delete node;
-   }
-}
-
-void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte) {
-   // Delete leaf from inner node
-   node->child[node->childIndex[keyByte]]=NULL;
-   node->childIndex[keyByte]=emptyMarker;
-   node->count--;
-
-   if (node->count==12) {
-      // Shrink to Node16
-      Node16 *newNode=new Node16();
-      *nodeRef=newNode;
-      copyPrefix(node,newNode);
-      for (unsigned b=0;b<256;b++) {
-         if (node->childIndex[b]!=emptyMarker) {
-            newNode->key[newNode->count]=flipSign(b);
-            newNode->child[newNode->count]=node->child[node->childIndex[b]];
-            newNode->count++;
-         }
-      }
-      delete node;
-   }
-}
-
-void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte) {
-   // Delete leaf from inner node
-   node->child[keyByte]=NULL;
-   node->count--;
-
-   if (node->count==37) {
-      // Shrink to Node48
-      Node48 *newNode=new Node48();
-      *nodeRef=newNode;
-      copyPrefix(node,newNode);
-      for (unsigned b=0;b<256;b++) {
-         if (node->child[b]) {
-            newNode->childIndex[b]=newNode->count;
-            newNode->child[newNode->count]=node->child[b];
-            newNode->count++;
-         }
-      }
-      delete node;
-   }
-}
+//// Forward references
+//void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace);
+//void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace);
+//void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte);
+//void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte);
+//
+//void erase(Node* node,Node** nodeRef,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
+//   // Delete a leaf from a tree
+//
+//   if (!node)
+//      return;
+//
+//   if (isLeaf(node)) {
+//      // Make sure we have the right leaf
+//      if (leafMatches(node,key,keyLength,depth,maxKeyLength))
+//         *nodeRef=NULL;
+//      return;
+//   }
+//
+//   // Handle prefix
+//   if (node->prefixLength) {
+//      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
+//         return;
+//      depth+=node->prefixLength;
+//   }
+//
+//   Node** child=findChild(node,key[depth]);
+//   if (isLeaf(*child)&&leafMatches(*child,key,keyLength,depth,maxKeyLength)) {
+//      // Leaf found, delete it in inner node
+//      switch (node->type) {
+//         case NodeType4: eraseNode4(static_cast<Node4*>(node),nodeRef,child); break;
+//         case NodeType16: eraseNode16(static_cast<Node16*>(node),nodeRef,child); break;
+//         case NodeType48: eraseNode48(static_cast<Node48*>(node),nodeRef,key[depth]); break;
+//         case NodeType256: eraseNode256(static_cast<Node256*>(node),nodeRef,key[depth]); break;
+//      }
+//   } else {
+//      //Recurse
+//      erase(*child,child,key,keyLength,depth+1,maxKeyLength);
+//   }
+//}
+//
+//void eraseNode4(Node4* node,Node** nodeRef,Node** leafPlace) {
+//   // Delete leaf from inner node
+//   unsigned pos=leafPlace-node->child;
+//   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
+//   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
+//   node->count--;
+//
+//   if (node->count==1) {
+//      // Get rid of one-way node
+//      Node* child=node->child[0];
+//      if (!isLeaf(child)) {
+//         // Concantenate prefixes
+//         unsigned l1=node->prefixLength;
+//         if (l1<maxPrefixLength) {
+//            node->prefix[l1]=node->key[0];
+//            l1++;
+//         }
+//         if (l1<maxPrefixLength) {
+//            unsigned l2=min(child->prefixLength,maxPrefixLength-l1);
+//            memcpy(node->prefix+l1,child->prefix,l2);
+//            l1+=l2;
+//         }
+//         // Store concantenated prefix
+//         memcpy(child->prefix,node->prefix,min(l1,maxPrefixLength));
+//         child->prefixLength+=node->prefixLength+1;
+//      }
+//      *nodeRef=child;
+//      delete node;
+//   }
+//}
+//
+//void eraseNode16(Node16* node,Node** nodeRef,Node** leafPlace) {
+//   // Delete leaf from inner node
+//   unsigned pos=leafPlace-node->child;
+//   memmove(node->key+pos,node->key+pos+1,node->count-pos-1);
+//   memmove(node->child+pos,node->child+pos+1,(node->count-pos-1)*sizeof(uintptr_t));
+//   node->count--;
+//
+//   if (node->count==3) {
+//      // Shrink to Node4
+//      Node4* newNode=new Node4();
+//      newNode->count=node->count;
+//      copyPrefix(node,newNode);
+//      for (unsigned i=0;i<4;i++)
+//         newNode->key[i]=flipSign(node->key[i]);
+//      memcpy(newNode->child,node->child,sizeof(uintptr_t)*4);
+//      *nodeRef=newNode;
+//      delete node;
+//   }
+//}
+//
+//void eraseNode48(Node48* node,Node** nodeRef,uint8_t keyByte) {
+//   // Delete leaf from inner node
+//   node->child[node->childIndex[keyByte]]=NULL;
+//   node->childIndex[keyByte]=emptyMarker;
+//   node->count--;
+//
+//   if (node->count==12) {
+//      // Shrink to Node16
+//      Node16 *newNode=new Node16();
+//      *nodeRef=newNode;
+//      copyPrefix(node,newNode);
+//      for (unsigned b=0;b<256;b++) {
+//         if (node->childIndex[b]!=emptyMarker) {
+//            newNode->key[newNode->count]=flipSign(b);
+//            newNode->child[newNode->count]=node->child[node->childIndex[b]];
+//            newNode->count++;
+//         }
+//      }
+//      delete node;
+//   }
+//}
+//
+//void eraseNode256(Node256* node,Node** nodeRef,uint8_t keyByte) {
+//   // Delete leaf from inner node
+//   node->child[keyByte]=NULL;
+//   node->count--;
+//
+//   if (node->count==37) {
+//      // Shrink to Node48
+//      Node48 *newNode=new Node48();
+//      *nodeRef=newNode;
+//      copyPrefix(node,newNode);
+//      for (unsigned b=0;b<256;b++) {
+//         if (node->child[b]) {
+//            newNode->childIndex[b]=newNode->count;
+//            newNode->child[newNode->count]=node->child[b];
+//            newNode->count++;
+//         }
+//      }
+//      delete node;
+//   }
+//}
 
 static double gettime(void) {
   struct timeval now_tv;
@@ -662,16 +679,11 @@ int main(int argc,char** argv) {
    // Build tree
    double start = gettime();
    Node* tree=NULL;
-   // PerfEvent e;
-   // e.startCounters();
    for (uint64_t i=0;i<n;i++) {
       uint8_t key[8];loadKey(keys[i],key);
       insert(tree,&tree,key,0,keys[i],8);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-   // e.stopCounters();
-   // e.printReport(std::cout, n); // use n as scale factor
-   // std::cout << std::endl;
 
    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
     uint64_t* lookup_keys=new uint64_t[n];
@@ -683,7 +695,7 @@ int main(int argc,char** argv) {
         /// zipfian distributed lookup
         std::random_device rd;
         std::mt19937 gen(rd());
-        zipf_table_distribution<> zipf(n, alpha);
+        zipf_table_distribution<> zipf(n, alpha);  /// zipf distribution \in [1, n]
         std::vector<unsigned long> vec;
         std::set<unsigned long> set;
         for (int i = 0; i < n; ++i) {
@@ -692,35 +704,83 @@ int main(int argc,char** argv) {
             set.emplace(index);
             lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
         }
-        // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
-        // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
+         std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
+    }
+    /// Before shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;
+//    }
+    std::sort(lookup_keys, lookup_keys + n); ///
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> uni_distrib(1, n);
+    for (uint64_t i=0;i<n;) {
+        const uint64_t before = lookup_keys[i];
+        const uint64_t after = static_cast<uint64_t>(uni_distrib(gen));
+        while (lookup_keys[i] == before) {
+            lookup_keys[i] = after;
+            ++i;
+        }
+    }
+    std::random_shuffle(lookup_keys, lookup_keys + n);
+//    std::vector<uint8_t*> real_lookup_keys;
+    for (uint64_t i=0;i<n;i++) {
+        uint8_t* key=new uint8_t[8];
+        loadKey(lookup_keys[i],key);
+//        real_lookup_keys.push_back(key);  /// Not used.
+    }
+    /// After shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;  // std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
+//    }
+
+
+    int iteration = 3;
+    for (int i = 0; i < iteration; ++i) {
+//   uint64_t repeat=10000000/n;
+        uint64_t repeat = 10;
+        if (repeat < 1) repeat = 1;
+        uint64_t leafoutput = 0;
+        PerfEvent e_lookup;
+        start = gettime();
+        e_lookup.startCounters();
+
+        for (uint64_t r = 0; r < repeat; r++) {
+            for (uint64_t i = 0; i < n; i++) {
+                uint8_t key[8];
+                loadKey(lookup_keys[i],key);
+               Node *leaf = lookup(tree, key, 8, 0, 8); /// leaf is just a madeup pointer
+                leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
+//                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+            }
+        }
+        double end = gettime();
+        printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
+        e_lookup.stopCounters();
+        e_lookup.printReport(std::cout, n * repeat); // use n as scale factor
+        std::cout << std::endl;
+        std::cout << "leafoutput " << leafoutput << std::endl;
+
+        std::string output = "|";
+        output += std::to_string(alpha) + ",";
+        const double throughput = (n * repeat / 1000000.0) / (end - start);
+        output += std::to_string(throughput) + ",";
+        double tlb_miss = 0;
+        for (unsigned i = 0; i < e_lookup.events.size(); i++) {
+            if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
+                e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
+                output += std::to_string(e_lookup.events[i].readCounter() / (n * repeat)) + ",";
+            }
+            if (e_lookup.names[i] == "dTLB-load-misses") {
+                tlb_miss = e_lookup.events[i].readCounter();
+            }
+        }
+        output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
+        output.pop_back();
+        std::cout << output << std::endl;
     }
 
-   // Repeat lookup for small trees to get reproducable results
-   uint64_t repeat=10000000/n;
-   if (repeat<1)
-      repeat=1;
-   start = gettime();
-   PerfEvent e_lookup;
-   e_lookup.startCounters();
-   for (uint64_t r=0;r<repeat;r++) {
-      for (uint64_t i=0;i<n;i++) {
-         uint8_t key[8];loadKey(lookup_keys[i],key);
-         Node* leaf=lookup(tree,key,8,0,8);
-         assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
-      }
-   }
-   printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
-   e_lookup.stopCounters();
-   e_lookup.printReport(std::cout, n); // use n as scale factor
-   std::cout << std::endl;
-//   start = gettime();
-//   for (uint64_t i=0;i<n;i++) {
-//      uint8_t key[8];loadKey(keys[i],key);
-//      erase(tree,&tree,key,8,0,8);
-//   }
-//   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-//   assert(tree==NULL);
+    for (uint64_t i=0;i<n;i++) delete(real_lookup_keys[i]);
 
    return 0;
 }

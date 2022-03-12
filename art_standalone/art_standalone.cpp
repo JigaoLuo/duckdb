@@ -4,11 +4,16 @@
 #include "duckdb/execution/index/art/art.hpp"
 
 #include "PerfEvent.hpp"
+#include "zipf_table_distribution.hpp"
 
 #include <sys/time.h>
 
 #include <string>
 #include <set>
+
+/// https://stackoverflow.com/questions/19310541/having-trouble-compiling-c-code-on-ubuntu-include-errors
+/// https://stackoverflow.com/questions/23224607/how-do-i-include-linux-header-files-like-linux-getcpu-h
+#include "/usr/src/linux-headers-5.3.0-62/arch/x86/include/asm/page.h"
 
 using namespace duckdb;
 
@@ -19,9 +24,11 @@ static inline double gettime(void) {
 }
 
 int main(int argc,char** argv) {
-    if (argc!=3) {
-        printf("usage: %s n 0|1|2\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n", argv[0]);
-        exit(1);
+    if (argc!=5) {
+        printf("usage: %s n 0|1|2 u|z alpha\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n"
+               "u: uniform distributed lookup\nz: zipfian distributed lookup\n"
+               "alpha: the factor of the zipfian distribution\n", argv[0]);
+        return 1;
     }
 
     const int32_t num_keys = atoi(argv[1]);
@@ -30,12 +37,10 @@ int main(int argc,char** argv) {
 
     // Check: src/execution/index/art/art.cpp void ART::GenerateKeys(DataChunk &input, vector<unique_ptr<Key>> &insert_keys)
     // Here is a table with one column. ART is built upon this column.
-    vector<int32_t> in_art_input_data;
-    vector<unique_ptr<Key>> insert_keys;
-    vector<unique_ptr<Key>> in_art_keys;
-
-    vector<int32_t> not_in_art_input_data;
-    vector<unique_ptr<Key>> not_in_art_keys;
+    vector<int32_t> in_art_input_data;    /// Keys in data type: int32_t. The original keys.
+    vector<unique_ptr<Key>> insert_keys;  /// Moved into the ART, after the insertion.
+    vector<unique_ptr<Key>> in_art_keys;  /// Keys in data type: Key. The same order as insertion order.
+    vector<unique_ptr<Key>> look_up_art_keys;  /// Keys to be looked up.
 
     {
         /// Set Up
@@ -49,6 +54,7 @@ int main(int argc,char** argv) {
 
     {
         /// Parse argv[2]
+        /// Input Key \in [1, num_keys]
         // sorted dense keys
         in_art_input_data.reserve(num_keys);
         for (int32_t i = 1; i <= num_keys; ++i) in_art_input_data.emplace_back(i);
@@ -81,8 +87,6 @@ int main(int argc,char** argv) {
         }
 
         double start = gettime();
-        PerfEvent e;
-        e.startCounters();
         // Check: src/execution/index/art/art.cpp bool ART::Insert(IndexLock &lock, DataChunk &input, Vector &row_ids)
         // now insert the elements into the index
         for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
@@ -90,29 +94,94 @@ int main(int argc,char** argv) {
             bool __attribute__((unused)) insert_result = index->Insert(index->tree, move(insert_keys[idx]), 0, row_id);
         }
         printf("%lu,insert(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() / ((gettime() - start)) / 1000000.0);
-        e.stopCounters();
-        e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
-        std::cout << std::endl;
 	}
 
-    {
-        /// LookupInputData
-        unsigned repeat = 100000000 / in_art_input_data.size();
-        if (repeat < 1) repeat = 1;
-        double start = gettime();
-        PerfEvent e;
-        e.startCounters();
-        for (unsigned r = 0;r < repeat; ++r) {
-			// Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
-			for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
-				auto __attribute__((unused)) leaf = static_cast<Leaf *>(index->Lookup(index->tree, *in_art_keys[idx], 0));
-			}
-		}
-        printf("%lu,search(M operation/s),%f\n", in_art_input_data.size(), in_art_input_data.size() * repeat / ((gettime()-start)) / 1000000.0);
-        e.stopCounters();
-        e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
-        std::cout << std::endl;
-    }
 
+    const int iteration = 10;
+
+    /// Parse argv[4]
+    const double alpha = atof(argv[4]);
+    std::cout << "alpha := " << alpha << std::endl;
+
+    /// Parse argv[3]
+    if (argv[3][0] == 'u') {
+        look_up_art_keys.clear();
+        /// uniform distributed lookup == the original ART lookup procedure
+        /// just copy the key array :D
+        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+            look_up_art_keys.push_back(
+                    Key::CreateKey<int32_t>(in_art_input_data.data()[idx], index->is_little_endian));
+        }
+    } else if (argv[3][0] == 'z') {
+        look_up_art_keys.clear();
+        /// zipfian distributed lookup
+        const int n = in_art_input_data.size();
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        zipf_table_distribution<> zipf(n, alpha);  /// zipf distribution \in [1, n]
+        std::vector<unsigned long> vec;
+        std::set<unsigned long> set;
+        for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+//            for (int i = 0; i < n; ++i) {
+            const unsigned long zipf_gen_index = zipf(gen) - 1;
+            vec.emplace_back(zipf_gen_index);
+            set.emplace(zipf_gen_index);
+            look_up_art_keys.push_back(Key::CreateKey<int32_t>(in_art_input_data.data()[zipf_gen_index],
+                                                               index->is_little_endian));/// Fix zipfian distribution's value range to [0, n)
+        }
+        std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
+    }
+    std::random_shuffle(look_up_art_keys.begin(), look_up_art_keys.end());
+
+    for (int i = 0; i < iteration; ++i) {
+        {
+            /// LookupInputData
+//        unsigned repeat = 100000000 / in_art_input_data.size();
+//        if (repeat < 1) repeat = 1;
+            unsigned repeat = 1; // TODO: rethink or remove it
+            const int n = in_art_input_data.size();
+//unsigned repeat = 10; // TODO: :D
+            double start = gettime();
+            PerfEvent e;
+            e.startCounters();
+            int cap = 0;
+            for (unsigned r = 0; r < repeat; ++r) {
+                // Check: src/execution/index/art/art.cpp bool ART::SearchEqual(ARTIndexScanState *state, idx_t max_count, vector<row_t> &result_ids) {
+                for (idx_t idx = 0; idx < in_art_input_data.size(); ++idx) {
+                    index->Lookup(index->tree,*look_up_art_keys[idx], 0);
+                    /// This return value's memory is anyway access in the Lookup function itself.
+                    // TODO: return value is in EAX
+//                    cap += leaf->capacity; // Make sure the compiler doesn't compile away leaf
+//                    cap += leaf->num_elements; // Make sure the compiler doesn't compile away leaf
+                }
+            }
+            std::cout << cap << std::endl; // Make sure the compiler doesn't compile away leaf
+            printf("%lu,search(M operation/s),%f\n", in_art_input_data.size(),
+                   in_art_input_data.size() * repeat / ((gettime() - start)) / 1000000.0);
+            e.stopCounters();
+
+            std::string output = "|";
+            output += std::to_string(alpha) + ",";
+            double end = gettime();
+            const double throughput = (n * repeat / 1000000.0) / (end - start);
+            output += std::to_string(throughput) + ",";
+            double tlb_miss = 0;
+            for (unsigned i = 0; i < e.events.size(); i++) {
+                if (e.names[i] == "cycles" || e.names[i] == "L1-misses" || e.names[i] == "LLC-misses" ||
+                    e.names[i] == "dTLB-load-misses") {
+                    output += std::to_string(e.events[i].readCounter() / n / repeat) + ",";
+                }
+                if (e.names[i] == "dTLB-load-misses") {
+                    tlb_miss = e.events[i].readCounter();
+                }
+            }
+            output += std::to_string( 100.0 * tlb_miss / ( (end - start) * 1000000000.0 )) + ",";
+            output.pop_back();
+            std::cout << output << std::endl;
+            e.printReport(std::cout, in_art_input_data.size()); // use n as scale factor
+            std::cout << std::endl;
+        }
+
+    }
     return 0;
 }

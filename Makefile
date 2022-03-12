@@ -117,7 +117,10 @@ google_benchmark_release:
 	cd build/release/google_benchmark && ./art_benchmark
 
 art_standalone_release:
-	cd build/release/art_standalone && ./art_standalone 1000000 0 && ./art_standalone 1000000 1 && ./art_standalone 1000000 2
+	mkdir -p build/release && \
+	cd build/release && \
+	cmake $(GENERATOR) $(FORCE_COLOR) ${WARNINGS_AS_ERRORS} ${FORCE_WARN_UNUSED_FLAG} ${DISABLE_UNITY_FLAG} ${DISABLE_SANITIZER_FLAG} ${STATIC_LIBCPP} ${EXTENSIONS} -DCMAKE_BUILD_TYPE=Release ../.. && \
+	cmake --build . --target art_standalone
 
 release_expanded:
 	mkdir -p build/release_expanded && \

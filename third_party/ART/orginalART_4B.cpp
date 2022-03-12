@@ -12,20 +12,81 @@
 #include <assert.h>
 #include <sys/time.h>  // gettime
 #include <algorithm>   // std::random_shuffle
-#include <iostream>
 #include <vector>
 #include <set>
 
-#include "ART_nodes.hpp"
-#include "../allocator/art_mmap_allocator.hpp"
-#include "../allocator/MallocAllocator.hpp"
-#include "../allocator/PooledAllocator.hpp"
-#include "../allocator/MemoryPool/C-11/MemoryPool.h"
 #include "../perfevent/PerfEvent.hpp"
 #include "../zipf/zipf_table_distribution.hpp"
 
-/// Allocator
-art_mmap_allocator<page_type::huge_2mb, 0> art_allocator;
+// Constants for the node types
+static const int8_t NodeType4=0;
+static const int8_t NodeType16=1;
+static const int8_t NodeType48=2;
+static const int8_t NodeType256=3;
+static const int8_t Leaf=4;
+
+// The maximum prefix length for compressed paths stored in the
+// header, if the path is longer it is loaded from the database on
+// demand
+static const unsigned maxPrefixLength=9;
+
+// Shared header of all inner nodes
+struct Node {
+   // length of the compressed path (prefix)
+   uint32_t prefixLength;
+   // number of non-null children
+   uint16_t count;
+   // node type
+   int8_t type;
+   // compressed path (prefix)
+   uint8_t prefix[maxPrefixLength];
+
+   Node(int8_t type) : prefixLength(0),count(0),type(type) {}
+};
+
+// Node with up to 4 children
+struct Node4 : Node {
+   uint8_t key[4];
+   Node* child[4];
+
+   Node4() : Node(NodeType4) {
+      memset(key,0,sizeof(key));
+      memset(child,0,sizeof(child));
+   }
+};
+
+// Node with up to 16 children
+struct Node16 : Node {
+   uint8_t key[16];
+   Node* child[16];
+
+   Node16() : Node(NodeType16) {
+      memset(key,0,sizeof(key));
+      memset(child,0,sizeof(child));
+   }
+};
+
+static const uint8_t emptyMarker=48;
+
+// Node with up to 48 children
+struct Node48 : Node {
+   uint8_t childIndex[256];
+   Node* child[48];
+
+   Node48() : Node(NodeType48) {
+      memset(childIndex,emptyMarker,sizeof(childIndex));
+      memset(child,0,sizeof(child));
+   }
+};
+
+// Node with up to 256 children
+struct Node256 : Node {
+   Node* child[256];
+
+   Node256() : Node(NodeType256) {
+      memset(child,0,sizeof(child));
+   }
+};
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
@@ -50,7 +111,7 @@ uint8_t flipSign(uint8_t keyByte) {
 void loadKey(uintptr_t tid,uint8_t key[]) {
    // Store the key of the tuple into the key vector
    // Implementation is database specific
-   reinterpret_cast<uint64_t*>(key)[0]=__builtin_bswap64(tid);
+   reinterpret_cast<uint32_t*>(key)[0]=__builtin_bswap32(tid);
 }
 
 // This address is used to communicate that search failed
@@ -242,7 +303,7 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
    return NULL;
 }
 
-Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
+Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {
    // Find the node with a matching key, alternative pessimistic version
 
    while (node!=NULL) {
@@ -296,10 +357,8 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       while (existingKey[depth+newPrefixLength]==key[depth+newPrefixLength])
          newPrefixLength++;
 
-      auto memory = art_allocator.allocate_node4();  ///
-      /// auto memory = allocator.allocate(sizeof(Node4));  ///
-      /// auto memory = allocator4.allocate();  ///
-      Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
+      Node4* newNode=new Node4();
+//while(isLeaf(newNode)) newNode=new Node4();
       newNode->prefixLength=newPrefixLength;
       memcpy(newNode->prefix,key+depth,min(newPrefixLength,maxPrefixLength));
       *nodeRef=newNode;
@@ -314,11 +373,9 @@ void insert(Node* node,Node** nodeRef,uint8_t key[],unsigned depth,uintptr_t val
       unsigned mismatchPos=prefixMismatch(node,key,depth,maxKeyLength);
       if (mismatchPos!=node->prefixLength) {
          // Prefix differs, create new node
-		 auto memory = art_allocator.allocate_node4();  ///
-         /// auto memory = allocator.allocate(sizeof(Node4));  ///
-         /// auto memory = allocator4.allocate();  ///
-		 Node4* newNode=new (memory) Node4();  /// Node4* newNode=new Node4();
-         *nodeRef=newNode;
+         Node4* newNode=new Node4();
+//while(isLeaf(newNode)) newNode=new Node4();
+          *nodeRef=newNode;
          newNode->prefixLength=mismatchPos;
          memcpy(newNode->prefix,node->prefix,min(mismatchPos,maxPrefixLength));
          // Break up prefix
@@ -369,18 +426,15 @@ void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node16
-      auto memory = art_allocator.allocate_node16();  ///
-      /// auto memory = allocator.allocate(sizeof(Node16)); ///
-      /// auto memory = allocator16.allocate();  ///
-      Node16* newNode=new (memory) Node16();  /// Node16* newNode=new Node16();
-      *nodeRef=newNode;
+      Node16* newNode=new Node16();
+//while(isLeaf(newNode)) newNode=new Node16();
+       *nodeRef=newNode;
       newNode->count=4;
       copyPrefix(node,newNode);
       for (unsigned i=0;i<4;i++)
          newNode->key[i]=flipSign(node->key[i]);
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
-	  /// allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node4));  /// delete node;
-      /// allocator4.deallocate(node);  ///
+      delete node;
       return insertNode16(newNode,nodeRef,keyByte,child);
    }
 }
@@ -400,18 +454,15 @@ void insertNode16(Node16* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node48
-	  auto memory = art_allocator.allocate_node48();  ///
-      /// auto memory = allocator.allocate(sizeof(Node48));  ///
-	  /// auto memory = allocator48.allocate();  ///
-	  Node48* newNode=new (memory) Node48();  /// Node48* newNode=new Node48();
+      Node48* newNode=new Node48();
+//while(isLeaf(newNode)) newNode=new Node48();
       *nodeRef=newNode;
       memcpy(newNode->child,node->child,node->count*sizeof(uintptr_t));
       for (unsigned i=0;i<node->count;i++)
          newNode->childIndex[flipSign(node->key[i])]=i;
       copyPrefix(node,newNode);
       newNode->count=node->count;
-      /// allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node16));  /// delete node;
-      /// allocator16.deallocate(node);  ///
+      delete node;
       return insertNode48(newNode,nodeRef,keyByte,child);
    }
 }
@@ -428,18 +479,15 @@ void insertNode48(Node48* node,Node** nodeRef,uint8_t keyByte,Node* child) {
       node->count++;
    } else {
       // Grow to Node256
-	  auto memory = art_allocator.allocate_node256();  ///
-      /// auto memory = allocator.allocate(sizeof(Node256));  ///
-	  /// auto memory = allocator256.allocate();  ///
-      Node256* newNode=new (memory) Node256();  /// Node256* newNode=new Node256();
-      for (unsigned i=0;i<256;i++)
+      Node256* newNode=new Node256();
+//while(isLeaf(newNode)) newNode=new Node256();
+       for (unsigned i=0;i<256;i++)
          if (node->childIndex[i]!=48)
             newNode->child[i]=node->child[node->childIndex[i]];
       newNode->count=node->count;
       copyPrefix(node,newNode);
       *nodeRef=newNode;
-      /// allocator.deallocate(reinterpret_cast<unsigned char*>(node), sizeof(Node48));  /// delete node;
-      /// allocator48.deallocate(node);  ///
+      delete node;
       return insertNode256(newNode,nodeRef,keyByte,child);
    }
 }
@@ -592,23 +640,18 @@ static double gettime(void) {
 }
 
 int main(int argc,char** argv) {
-    if (argc!=5) {
-        printf("usage: %s n 0|1|2 u|z alpha\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n"
-               "u: uniform distributed lookup\nz: zipfian distributed lookup\n"
-               "alpha: the factor of the zipfian distribution", argv[0]);
-        return 1;
-    }
+   if (argc!=5) {
+      printf("usage: %s n 0|1|2 u|z alpha\nn: number of keys\n0: sorted keys\n1: dense keys\n2: sparse keys\n"
+                                           "u: uniform distributed lookup\nz: zipfian distributed lookup\n"
+                                           "alpha: the factor of the zipfian distribution", argv[0]);
+      return 1;
+   }
 
-   uint64_t n=atoi(argv[1]);
-   uint64_t* keys=new uint64_t[n];
-
-   std::cout << "Node4 Size: " << sizeof(Node4) << std::endl;
-   std::cout << "Node16 Size: " << sizeof(Node16) << std::endl;
-   std::cout << "Node48 Size: " << sizeof(Node48) << std::endl;
-   std::cout << "Node256 Size: " << sizeof(Node256) << std::endl;
+   const uint64_t n=atoi(argv[1]);
+   uint32_t* keys=new uint32_t[n];
 
    // Generate keys
-   for (uint64_t i=0;i<n;i++)
+   for (uint32_t i=0;i<n;i++)
       // dense, sorted
       keys[i]=i+1;
    if (atoi(argv[2])==1)
@@ -616,29 +659,32 @@ int main(int argc,char** argv) {
       std::random_shuffle(keys,keys+n);
    if (atoi(argv[2])==2)
       // "pseudo-sparse" (the most-significant leaf bit gets lost)
-      for (uint64_t i=0;i<n;i++)
-         keys[i]=(static_cast<uint64_t>(rand())<<32) | static_cast<uint64_t>(rand());
+      for (uint32_t i=0;i<n;i++)
+         keys[i]=static_cast<uint32_t>(rand());
 
    const double alpha = atof(argv[4]);
 
    // Build tree
    double start = gettime();
    Node* tree=NULL;
+   // PerfEvent e;
+   // e.startCounters();
    for (uint64_t i=0;i<n;i++) {
-      uint8_t key[8];loadKey(keys[i],key);
-      insert(tree,&tree,key,0,keys[i],8);
+      uint8_t key[4];loadKey(keys[i],key);
+      insert(tree,&tree,key,0,keys[i],4);
    }
    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+   // e.stopCounters();
+   // e.printReport(std::cout, n); // use n as scale factor
+   // std::cout << std::endl;
 
-    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
-    uint64_t* lookup_keys=new uint64_t[n];
+   /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
+    uint32_t* lookup_keys=new uint32_t[n];
     if (argv[3][0]=='u') {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
-// TODO(jigao): try this
-/// Lookup 1 2 3 4 5 6: might hit the cache
-/// To shuffle the input to be unsorted
+
 //        std::random_device rd;
 //        std::mt19937 g(rd());
 //        std::shuffle(lookup_keys, lookup_keys + n, g);
@@ -655,50 +701,72 @@ int main(int argc,char** argv) {
             set.emplace(index);
             lookup_keys[i] = keys[index]; /// Fix zipfian distribution's value range to [0, n)
         }
-        std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
+        // std::cout << "lookup indexes as vector: " << std::endl; for (const auto& ele : vec)  std::cout << ele << std::endl;
+        // std::cout << "lookup indexes as set: #=" << set.size() << std::endl; for (const auto& ele : set)  std::cout << ele << std::endl;
     }
 
-    int iteration = 5;
-    for (int i = 0; i < iteration; ++i) {
-        // Repeat lookup for small trees to get reproducable results
-        uint64_t repeat = 10000000 / n;
-        if (repeat < 1)
-            repeat = 1;
-        start = gettime();
-        PerfEvent e_lookup;
-        e_lookup.startCounters();
-        for (uint64_t r = 0; r < repeat; r++) {
-            for (uint64_t i = 0; i < n; i++) {
-                uint8_t key[8];
-                loadKey(lookup_keys[i], key);
-                Node *leaf = lookup(tree, key, 8, 0, 8);
-                assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
-            }
-        }
-        double end = gettime();
-        printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
-        e_lookup.stopCounters();
-        e_lookup.printReport(std::cout, n); // use n as scale factor
-        std::cout << std::endl;
+   // Repeat lookup for small trees to get reproducable results
+   {
+       /// Warm Up
+       std::cout << "Warm UP" << std::endl;
+       uint64_t repeat=10000000/n;
+       if (repeat<1) repeat=1;
+       for (uint64_t r=0;r<repeat;r++) {
+           for (uint64_t i=0;i<n;i++) {
+               uint8_t key[4];loadKey(lookup_keys[i],key);
+               Node* leaf=lookup(tree,key,4,0,8);
+               assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+               assert(isLeaf(leaf));
+               assert(getLeafValue(leaf)==lookup_keys[i]);
+           }
+       }
+   }
 
-        std::string output = "|";
-        output += std::to_string(alpha) + ",";
-        const double throughput = (n * repeat / 1000000.0) / (end - start);
-        output += std::to_string(throughput) + ",";
-        double tlb_miss = 0;
-        for (unsigned i = 0; i < e_lookup.events.size(); i++) {
-            if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
-                e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-                output += std::to_string(e_lookup.events[i].readCounter() / n) + ",";
-            }
-            if (e_lookup.names[i] == "dTLB-load-misses") {
-                tlb_miss = e_lookup.events[i].readCounter();
-            }
-        }
-        output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
-        output.pop_back();
-        std::cout << output << std::endl;
+    std::vector<uint8_t*> real_lookup_keys;
+    for (uint64_t i=0;i<n;i++) {
+        uint8_t* key=new uint8_t[4];
+        loadKey(lookup_keys[i],key);
+        real_lookup_keys.push_back(key);
     }
-   delete [] keys;
+
+//   uint64_t repeat=10000000/n;
+    uint64_t repeat=10;
+   if (repeat<1) repeat=1;
+   start = gettime();
+   PerfEvent e_lookup;
+   e_lookup.startCounters();
+   for (uint64_t r=0;r<repeat;r++) {
+      for (uint64_t i=0;i<n;i++) {
+         Node* leaf=lookup(tree,real_lookup_keys[i],4,0,4);
+      }
+   }
+std::string output = "|";
+output += std::to_string(alpha) + ",";
+const double throughput = (n*repeat/1000000.0)/(gettime()-start);
+output += std::to_string(throughput) + ",";
+   printf("lookup,%ld,%f\n",n,(n*repeat/1000000.0)/(gettime()-start));
+   e_lookup.stopCounters();
+for (unsigned i=0; i<e_lookup.events.size(); i++) {
+        if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" || e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
+                output += std::to_string(e_lookup.events[i].readCounter()/n) + ",";
+            }
+    }
+output.pop_back();
+std::cout << output << std::endl;
+   e_lookup.printReport(std::cout, n); // use n as scale factor
+   std::cout << std::endl;
+
+//   start = gettime();
+//   for (uint64_t i=0;i<n;i++) {
+//      uint8_t key[8];loadKey(keys[i],key);
+//      erase(tree,&tree,key,8,0,8);
+//   }
+//   printf("erase,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+//   assert(tree==NULL);
+
+    for (uint64_t i=0;i<n;i++) {
+        delete(real_lookup_keys[i]);
+    }
+
    return 0;
 }
