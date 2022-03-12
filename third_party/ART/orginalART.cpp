@@ -14,10 +14,15 @@
 #include <algorithm>   // std::random_shuffle
 #include <vector>
 #include <set>
+#include <map>
 #include <unordered_set>
+#include <unordered_map>
 #include <iostream>
 #include <cstring>
 #include <random>
+
+#include <unistd.h>
+#include <stdint.h>
 
 #include "../perfevent/PerfEvent.hpp"
 #include "../zipf/zipf_table_distribution.hpp"
@@ -43,9 +48,6 @@ struct Node {
    int8_t type;
    // compressed path (prefix)
    uint8_t prefix[maxPrefixLength];
-
-//uint8_t bala[4096];//TODO(jigao): delete this, if not counting # pointers or pages
-
 
     Node(int8_t type) : prefixLength(0),count(0),type(type) {}
 };
@@ -309,30 +311,35 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
    return NULL;
 }
 
-Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
-//Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength, std::unordered_set<Node*>& add) {  //TODO(jigao): try this!!! //TODO(jigao): delete this, if not counting # pointers or pages
-   // Find the node with a matching key, alternative pessimistic version
-
-   while (node!=NULL) {
-      if (isLeaf(node)) {
-         if (leafMatches(node,key,keyLength,depth,maxKeyLength))
-            return node;
-         return NULL;
-      }
-
-      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
-         return NULL; else
-         depth+=node->prefixLength;
-
-      node=*findChild(node,key[depth]);
-      depth++;
+////Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength) {  //TODO(jigao): try this!!!
+//Node* lookupPessimistic(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned maxKeyLength, std::unordered_set<uintptr_t>& add, std::vector<int>& tree_depth, std::unordered_map<Node*, int>& nodes) {  //TODO(jigao): try this!!! //TODO(jigao): delete this, if not counting # pointers or pages
+//   // Find the node with a matching key, alternative pessimistic version
+//
+//int tree_depth_ = 0;
+//   while (node!=NULL) {
+//      if (isLeaf(node)) {
+//         if (leafMatches(node,key,keyLength,depth,maxKeyLength)) {
+// tree_depth.push_back(tree_depth_);
+//             return node;
+//         }
+//         return NULL;
+//      }
+//
+//tree_depth_++;
+//nodes[node] = tree_depth_;
 //if (!isLeaf(node) && node != NULL) {
-//    add.emplace(node);
+//   add.emplace( ( reinterpret_cast<uintptr_t>( node ) / getpagesize() ) );
 //}
-   }
-
-   return NULL;
-}
+//      if (prefixMismatch(node,key,depth,maxKeyLength)!=node->prefixLength)
+//         return NULL; else
+//         depth+=node->prefixLength;
+//
+//      node=*findChild(node,key[depth]);
+//      depth++;
+//   }
+//
+//   return NULL;
+//}
 
 // Forward references
 void insertNode4(Node4* node,Node** nodeRef,uint8_t keyByte,Node* child);
@@ -728,7 +735,7 @@ int main(int argc,char** argv) {
 //    }
 
 
-    int iteration = 10;
+    int iteration = 3;
     for (int i = 0; i < iteration; ++i) {
 //   uint64_t repeat=10000000/n;
         uint64_t repeat = 10;
@@ -737,13 +744,12 @@ int main(int argc,char** argv) {
         PerfEvent e_lookup;
         start = gettime();
         e_lookup.startCounters();
-//std::unordered_set<Node*> add; //TODO(jigao): delete this, if not counting # pointers or pages
+
         for (uint64_t r = 0; r < repeat; r++) {
             for (uint64_t i = 0; i < n; i++) {
                 uint8_t key[8];
                 loadKey(lookup_keys[i],key);
-                Node *leaf = lookup(tree, key, 8, 0, 8); /// leaf is just a madeup pointer
-//                Node *leaf = lookupPessimistic(tree, key, 8, 0, 8, add); //TODO(jigao): delete this, if not counting # pointers or pages
+               Node *leaf = lookup(tree, key, 8, 0, 8); /// leaf is just a madeup pointer
                 leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
 //                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
@@ -772,10 +778,9 @@ int main(int argc,char** argv) {
         output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
         output.pop_back();
         std::cout << output << std::endl;
-//std::cout << "# inner nodes add: " << add.size() << std::endl; //TODO(jigao): delete this, if not counting # pointers or pages
     }
 
-//    for (uint64_t i=0;i<n;i++) delete(real_lookup_keys[i]);
+    for (uint64_t i=0;i<n;i++) delete(real_lookup_keys[i]);
 
    return 0;
 }
