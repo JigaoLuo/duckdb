@@ -530,27 +530,12 @@ int main(int argc,char** argv) {
 
    const double alpha = atof(argv[4]);
 
-   // Build tree
-   double start = gettime();
-   Node* tree=NULL;
-   for (uint64_t i=0;i<n;i++) {
-      uint8_t key[8];loadKey(keys[i],key);
-      insert(tree,&tree,key,0,keys[i],8);
-   }
-   printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-
     /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
     uint64_t* lookup_keys=new uint64_t[n];
     if (argv[3][0]=='u') {
         /// uniform distributed lookup == the original ART lookup procedure
         /// just copy the key array :D
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
-// TODO(jigao): try this
-/// Lookup 1 2 3 4 5 6: might hit the cache
-/// To shuffle the input to be unsorted
-//        std::random_device rd;
-//        std::mt19937 g(rd());
-//        std::shuffle(lookup_keys, lookup_keys + n, g);
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
         std::random_device rd;
@@ -567,6 +552,45 @@ int main(int argc,char** argv) {
         std::cout << "lookup indexes as set: #=" << set.size() << std::endl;
     }
 
+    /// Before shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;
+//    }
+    std::sort(lookup_keys, lookup_keys + n); ///
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> uni_distrib(1, n);
+    for (uint64_t i=0;i<n;) {
+        const uint64_t before = lookup_keys[i];
+        const uint64_t after = static_cast<uint64_t>(uni_distrib(gen));
+        while (lookup_keys[i] == before) {
+            lookup_keys[i] = after;
+            ++i;
+        }
+    }
+    std::random_shuffle(lookup_keys, lookup_keys + n);
+//    std::vector<uint8_t*> real_lookup_keys;
+//    for (uint64_t i=0;i<n;i++) {
+//        uint8_t* key=new uint8_t[8];
+//        loadKey(lookup_keys[i],key);
+//        real_lookup_keys.push_back(key);  /// Not used.
+//    }
+    /// After shuffle
+//    for (uint64_t i=0;i<n;i++) {
+//        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;  // std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
+//    }
+
+
+    // Build tree
+    double start = gettime();
+    Node* tree=NULL;
+    for (uint64_t i=0;i<n;i++) {
+        uint8_t key[8];loadKey(lookup_keys[i],key);
+        insert(tree,&tree,key,0,lookup_keys[i],8);
+    }
+    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+
+
     int iteration = 1;
     for (int i = 0; i < iteration; ++i) {
         // Repeat lookup for small trees to get reproducable results
@@ -581,7 +605,7 @@ int main(int argc,char** argv) {
                 uint8_t key[8];
                 loadKey(lookup_keys[i], key);
                 Node *leaf = lookup(tree, key, 8, 0, 8);
-                assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
+//                assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
             }
         }
         double end = gettime();
@@ -616,6 +640,8 @@ int main(int argc,char** argv) {
     std::cout << "size: " << res.size() << std::endl;
 
     /// Statistics of nodes
+    std::cout << "Number of huge pages: " << art_allocator.num_pages() << std::endl;
+
     size_t node4_num = 0;
     size_t node16_num = 0;
     size_t node48_num = 0;
@@ -656,11 +682,11 @@ int main(int argc,char** argv) {
     };
     std::sort(res.begin(), res.end(), compare());
 
-    std::cout << "Reference Counter: "
-    for (const auto& n : res) {
-        std::cout << n->rc << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "Reference Counter: ";
+//    for (const auto& n : res) {
+//        std::cout << n->rc << " ";
+//    }
+//    std::cout << std::endl;
 
     /// Mark old & new nodes
     std::unordered_map<Node*, Node*> old_to_new;
@@ -772,7 +798,7 @@ int main(int argc,char** argv) {
                     uint8_t key[8];
                     loadKey(lookup_keys[i], key);
                     Node *leaf = lookup(new_root, key, 8, 0, 8);
-                    assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
+//                    assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
                 }
             }
             double end = gettime();
@@ -801,6 +827,7 @@ int main(int argc,char** argv) {
         }
     }
 
+    std::cout << "Number of huge pages for RE_Orgnize: " << art_allocator_reorginize.num_pages() << std::endl;
 
     delete [] keys;
    return 0;

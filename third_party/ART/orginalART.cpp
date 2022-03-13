@@ -583,15 +583,6 @@ int main(int argc,char** argv) {
 
    const double alpha = atof(argv[4]);
 
-   // Build tree
-   double start = gettime();
-   Node* tree=NULL;
-   for (uint64_t i=0;i<n;i++) {
-      uint8_t key[8];loadKey(keys[i],key);
-      insert(tree,&tree,key,0,keys[i],8);
-   }
-   printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
-
    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
     uint64_t* lookup_keys=new uint64_t[n];
     if (argv[3][0]=='u') {
@@ -631,15 +622,25 @@ int main(int argc,char** argv) {
     }
     std::random_shuffle(lookup_keys, lookup_keys + n);
 //    std::vector<uint8_t*> real_lookup_keys;
-    for (uint64_t i=0;i<n;i++) {
-        uint8_t* key=new uint8_t[8];
-        loadKey(lookup_keys[i],key);
+//    for (uint64_t i=0;i<n;i++) {
+//        uint8_t* key=new uint8_t[8];
+//        loadKey(lookup_keys[i],key);
 //        real_lookup_keys.push_back(key);  /// Not used.
-    }
+//    }
     /// After shuffle
 //    for (uint64_t i=0;i<n;i++) {
 //        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;  // std::cout << (keys[i]) << " | " << lookup_keys[i] << " | " << __builtin_bswap64(*(reinterpret_cast<uint64_t*>(real_lookup_keys[i]))) << std::endl;
 //    }
+
+
+    // Build tree
+    double start = gettime();
+    Node* tree=NULL;
+    for (uint64_t i=0;i<n;i++) {
+        uint8_t key[8];loadKey(lookup_keys[i],key);
+        insert(tree,&tree,key,0,lookup_keys[i],8);
+    }
+    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
 
 
     int iteration = 3;
