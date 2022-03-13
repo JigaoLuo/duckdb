@@ -26,6 +26,7 @@
 
 /// Allocator
 art_mmap_allocator<page_type::huge_2mb, 0> art_allocator;
+art_mmap_allocator<page_type::huge_2mb, 0> art_allocator_reorginize;
 
 inline Node* makeLeaf(uintptr_t tid) {
    // Create a pseudo-leaf
@@ -92,7 +93,7 @@ void traversal(Node* n, std::vector<Node*>& res) {
         }
         case NodeType48: {
             Node48* node=static_cast<Node48*>(n);
-            for (unsigned i=0;i<48;i++) {
+            for (unsigned i=0;i<256;i++) {
                 if (node->childIndex[i]!=emptyMarker) {
                     traversal(node->child[node->childIndex[i]], res);
                 }
@@ -608,10 +609,13 @@ int main(int argc,char** argv) {
         std::cout << output << std::endl;
     }
 
+
+    /// Collect all nodes
     std::vector<Node*> res;
     traversal(tree, res);
     std::cout << "size: " << res.size() << std::endl;
 
+    /// Statistics of nodes
     size_t node4_num = 0;
     size_t node16_num = 0;
     size_t node48_num = 0;
@@ -640,6 +644,163 @@ int main(int argc,char** argv) {
     std::cout << "node16_num:" << node16_num << std::endl;
     std::cout << "node48_num:" << node48_num << std::endl;
     std::cout << "node256_num:" << node256_num << std::endl;
+
+    /// Sort nodes with rc
+    struct compare {
+        // return true if s1 comes before s2
+        bool operator()(Node* const& s1, Node* const& s2) {
+            if (s1->rc > s2->rc)
+                return true;
+            else return false;
+        }
+    };
+    std::sort(res.begin(), res.end(), compare());
+
+    std::cout << "Reference Counter: "
+    for (const auto& n : res) {
+        std::cout << n->rc << " ";
+    }
+    std::cout << std::endl;
+
+    /// Mark old & new nodes
+    std::unordered_map<Node*, Node*> old_to_new;
+    std::vector<Node*> new_nodes;
+    for (const auto& n : res) {
+        switch (n->type) {
+            case NodeType4: {
+                Node4* node=static_cast<Node4*>(n);
+                auto memory = art_allocator_reorginize.allocate_node4();  ///
+                Node4* newNode=new (memory) Node4(*node);  /// Node4* newNode=new Node4();
+                old_to_new[n] = static_cast<Node*>(newNode);
+                new_nodes.push_back(static_cast<Node*>(newNode));
+                break;
+            }
+            case NodeType16: {
+                Node16* node=static_cast<Node16*>(n);
+                auto memory = art_allocator_reorginize.allocate_node16();  ///
+                Node16* newNode=new (memory) Node16(*node);  /// Node16* newNode=new Node16();
+                old_to_new[n] = static_cast<Node*>(newNode);
+                new_nodes.push_back(static_cast<Node*>(newNode));
+                break;
+            }
+            case NodeType48: {
+                Node48* node=static_cast<Node48*>(n);
+                auto memory = art_allocator_reorginize.allocate_node48();  ///
+                Node48* newNode=new (memory) Node48(*node);  /// Node48* newNode=new Node48();
+                old_to_new[n] = static_cast<Node*>(newNode);
+                new_nodes.push_back(static_cast<Node*>(newNode));
+                break;
+            }
+            case NodeType256: {
+                Node256* node=static_cast<Node256*>(n);
+                auto memory = art_allocator_reorginize.allocate_node256();  ///
+                Node256* newNode=new (memory) Node256(*node);  /// Node256* newNode=new Node256();
+                old_to_new[n] = static_cast<Node*>(newNode);
+                new_nodes.push_back(static_cast<Node*>(newNode));
+                break;
+            }
+        }
+    }
+
+    assert(res.size() == new_nodes.size());
+    assert(res.size() == old_to_new.size());
+
+    /// Replace all old pointers
+    for (const auto& n : new_nodes) {
+        switch (n->type) {
+            case NodeType4: {
+                Node4* node=static_cast<Node4*>(n);
+                for (unsigned i=0;i<node->count;i++) {
+                    if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                        auto found = old_to_new.find(node->child[i]);
+                        assert(found != old_to_new.end());
+                        node->child[i] = found->second;
+                    }
+                }
+                break;
+            }
+            case NodeType16: {
+                Node16* node=static_cast<Node16*>(n);
+                for (unsigned i=0;i<node->count;i++) {
+                    if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                        auto found = old_to_new.find(node->child[i]);
+                        assert(found != old_to_new.end());
+                        node->child[i] = found->second;
+                    }
+                }
+                break;
+            }
+            case NodeType48: {
+                Node48* node=static_cast<Node48*>(n);
+                for (unsigned i=0;i<256;i++) {
+                    if (node->childIndex[i]!=emptyMarker && !isLeaf(node->child[node->childIndex[i]])) {
+                        auto found = old_to_new.find(node->child[node->childIndex[i]]);
+                        assert(found != old_to_new.end());
+                        node->child[node->childIndex[i]] = found->second;
+                    }
+                }
+                break;
+            }
+            case NodeType256: {
+                Node256* node=static_cast<Node256*>(n);
+                for (unsigned i=0;i<256;i++) {
+                    if (node->child[i] != 0 && node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                        auto found = old_to_new.find(node->child[i]);
+                        assert(found != old_to_new.end());
+                        node->child[i] = found->second;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    /// Now lookup
+    Node* new_root = old_to_new[tree];
+    {
+        int iteration = 5;
+        for (int i = 0; i < iteration; ++i) {
+            // Repeat lookup for small trees to get reproducable results
+            uint64_t repeat = 10000000 / n;
+            if (repeat < 1)
+                repeat = 1;
+            start = gettime();
+            PerfEvent e_lookup;
+            e_lookup.startCounters();
+            for (uint64_t r = 0; r < repeat; r++) {
+                for (uint64_t i = 0; i < n; i++) {
+                    uint8_t key[8];
+                    loadKey(lookup_keys[i], key);
+                    Node *leaf = lookup(new_root, key, 8, 0, 8);
+                    assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
+                }
+            }
+            double end = gettime();
+            printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
+            e_lookup.stopCounters();
+            e_lookup.printReport(std::cout, n); // use n as scale factor
+            std::cout << std::endl;
+
+            std::string output = "|";
+            output += std::to_string(alpha) + ",";
+            const double throughput = (n * repeat / 1000000.0) / (end - start);
+            output += std::to_string(throughput) + ",";
+            double tlb_miss = 0;
+            for (unsigned i = 0; i < e_lookup.events.size(); i++) {
+                if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
+                    e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
+                    output += std::to_string(e_lookup.events[i].readCounter() / n) + ",";
+                }
+                if (e_lookup.names[i] == "dTLB-load-misses") {
+                    tlb_miss = e_lookup.events[i].readCounter();
+                }
+            }
+            output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
+            output.pop_back();
+            std::cout << output << std::endl;
+        }
+    }
+
 
     delete [] keys;
    return 0;

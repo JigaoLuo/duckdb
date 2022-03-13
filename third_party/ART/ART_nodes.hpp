@@ -26,6 +26,10 @@ struct Node {
     uint32_t rc = 0;
 
     Node(int8_t type) : prefixLength(0),count(0),type(type) {}
+
+    Node(const Node& other) : prefixLength(other.prefixLength), count(other.count), type(other.type), rc(other.rc) {
+        memcpy(prefix, other.prefix, maxPrefixLength);
+    }
 };
 
 // Node with up to 4 children
@@ -37,6 +41,11 @@ struct Node4 : Node {
         memset(key,0,sizeof(key));
         memset(child,0,sizeof(child));
     }
+
+    Node4(const Node4& other) : Node(other) {
+        memcpy(key, other.key, 4 * sizeof(uint8_t));
+        memcpy(child, other.child, 4 * sizeof(Node*));
+    }
 };
 
 // Node with up to 16 children
@@ -47,6 +56,11 @@ struct Node16 : Node {
     Node16() : Node(NodeType16) {
         memset(key,0,sizeof(key));
         memset(child,0,sizeof(child));
+    }
+
+    Node16(const Node16& other) : Node(other) {
+        memcpy(key, other.key, 16 * sizeof(uint8_t));
+        memcpy(child, other.child, 16 * sizeof(Node*));
     }
 };
 
@@ -61,6 +75,11 @@ struct Node48 : Node {
         memset(childIndex,emptyMarker,sizeof(childIndex));
         memset(child,0,sizeof(child));
     }
+
+    Node48(const Node48& other) : Node(other) {
+        memcpy(childIndex, other.childIndex, 256 * sizeof(uint8_t));
+        memcpy(child, other.child, 48 * sizeof(Node*));
+    }
 };
 
 // Node with up to 256 children
@@ -69,5 +88,9 @@ struct Node256 : Node {
 
     Node256() : Node(NodeType256) {
         memset(child,0,sizeof(child));
+    }
+
+    Node256(const Node256& other) : Node(other) {
+        memcpy(child, other.child, 256 * sizeof(Node*));
     }
 };
