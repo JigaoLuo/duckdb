@@ -583,6 +583,15 @@ int main(int argc,char** argv) {
 
    const double alpha = atof(argv[4]);
 
+    // Build tree
+    double start = gettime();
+    Node* tree=NULL;
+    for (uint64_t i=0;i<n;i++) {
+        uint8_t key[8];loadKey(keys[i],key);
+        insert(tree,&tree,key,0,keys[i],8);
+    }
+    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
+
    /// Prepare to-be-looked-up keys w.r.t. the distribution program argument
     uint64_t* lookup_keys=new uint64_t[n];
     if (argv[3][0]=='u') {
@@ -609,12 +618,15 @@ int main(int argc,char** argv) {
 //        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;
 //    }
     std::sort(lookup_keys, lookup_keys + n); ///
+    std::set<uint64_t> key_set(lookup_keys, lookup_keys + n);
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> uni_distrib(1, n);
     for (uint64_t i=0;i<n;) {
         const uint64_t before = lookup_keys[i];
-        const uint64_t after = static_cast<uint64_t>(uni_distrib(gen));
+        uint64_t pick_element = static_cast<uint64_t>(uni_distrib(gen));
+        while (key_set.find(pick_element) == key_set.end()) pick_element = static_cast<uint64_t>(uni_distrib(gen));
+        const uint64_t after = pick_element;  /// Ensure after in the key set and index
         while (lookup_keys[i] == before) {
             lookup_keys[i] = after;
             ++i;
@@ -633,14 +645,6 @@ int main(int argc,char** argv) {
 //    }
 
 
-    // Build tree
-    double start = gettime();
-    Node* tree=NULL;
-    for (uint64_t i=0;i<n;i++) {
-        uint8_t key[8];loadKey(lookup_keys[i],key);
-        insert(tree,&tree,key,0,lookup_keys[i],8);
-    }
-    printf("insert,%ld,%f\n",n,(n/1000000.0)/(gettime()-start));
 
 
     int iteration = 3;
@@ -659,7 +663,7 @@ int main(int argc,char** argv) {
                 loadKey(lookup_keys[i],key);
                Node *leaf = lookup(tree, key, 8, 0, 8); /// leaf is just a madeup pointer
                 leafoutput += (getLeafValue(leaf)==lookup_keys[i]);
-//                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
+                assert(isLeaf(leaf) && getLeafValue(leaf)==lookup_keys[i]);
             }
         }
         double end = gettime();
