@@ -548,6 +548,7 @@ int main(int argc,char** argv) {
         std::memcpy(lookup_keys, keys, n * sizeof(keys));
     } else if (argv[3][0]=='z') {
         /// zipfian distributed lookup
+        std::random_shuffle(keys, keys + n);
         std::random_device rd;
         std::mt19937 gen(rd());
         zipf_table_distribution<> zipf(n, alpha);
@@ -566,22 +567,22 @@ int main(int argc,char** argv) {
 //    for (uint64_t i=0;i<n;i++) {
 //        std::cout << (keys[i]) << " | " << lookup_keys[i] << std::endl;
 //    }
-    std::sort(lookup_keys, lookup_keys + n); ///
-    std::set<uint64_t> key_set(lookup_keys, lookup_keys + n);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> uni_distrib(1, n);
-    for (uint64_t i=0;i<n;) {
-        const uint64_t before = lookup_keys[i];
-        uint64_t pick_element = static_cast<uint64_t>(uni_distrib(gen));
-        while (key_set.find(pick_element) == key_set.end()) pick_element = static_cast<uint64_t>(uni_distrib(gen));
-        const uint64_t after = pick_element;  /// Ensure after in the key set and index
-        while (lookup_keys[i] == before) {
-            lookup_keys[i] = after;
-            ++i;
-        }
-    }
-    std::random_shuffle(lookup_keys, lookup_keys + n);
+//    std::sort(lookup_keys, lookup_keys + n); ///
+//    std::set<uint64_t> key_set(lookup_keys, lookup_keys + n);
+//    std::random_device rd;
+//    std::mt19937 gen(rd());
+//    std::uniform_int_distribution<> uni_distrib(1, n);
+//    for (uint64_t i=0;i<n;) {
+//        const uint64_t before = lookup_keys[i];
+//        uint64_t pick_element = static_cast<uint64_t>(uni_distrib(gen));
+//        while (key_set.find(pick_element) == key_set.end()) pick_element = static_cast<uint64_t>(uni_distrib(gen));
+//        const uint64_t after = pick_element;  /// Ensure after in the key set and index
+//        while (lookup_keys[i] == before) {
+//            lookup_keys[i] = after;
+//            ++i;
+//        }
+//    }
+//    std::random_shuffle(lookup_keys, lookup_keys + n);
 //    std::vector<uint8_t*> real_lookup_keys;
 //    for (uint64_t i=0;i<n;i++) {
 //        uint8_t* key=new uint8_t[8];
