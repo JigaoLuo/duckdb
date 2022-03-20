@@ -22,12 +22,10 @@ struct Node {
     int8_t type;
     // compressed path (prefix)
     uint8_t prefix[maxPrefixLength];
-    // reference counter
-    uint32_t rc = 0;
 
     Node(int8_t type) : prefixLength(0),count(0),type(type) {}
 
-    Node(const Node& other) : prefixLength(other.prefixLength), count(other.count), type(other.type), rc(other.rc) {
+    Node(const Node& other) : prefixLength(other.prefixLength), count(other.count), type(other.type) {
         memcpy(prefix, other.prefix, maxPrefixLength);
     }
 };

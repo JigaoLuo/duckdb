@@ -269,7 +269,6 @@ Node* lookup(Node* node,uint8_t key[],unsigned keyLength,unsigned depth,unsigned
          return node;
       }
 
-       ++node->rc;
       if (node->prefixLength) {
          if (node->prefixLength<maxPrefixLength) {
             for (unsigned pos=0;pos<node->prefixLength;pos++)
@@ -675,22 +674,8 @@ int main(int argc,char** argv) {
     std::cout << "node48_num:" << node48_num << std::endl;
     std::cout << "node256_num:" << node256_num << std::endl;
 
-    /// Sort nodes with rc
-    struct compare {
-        // return true if s1 comes before s2
-        bool operator()(Node* const& s1, Node* const& s2) {
-            if (s1->rc > s2->rc)
-                return true;
-            else return false;
-        }
-    };
-    std::sort(res.begin(), res.end(), compare());
-
-//    std::cout << "Reference Counter: ";
-//    for (const auto& n : res) {
-//        std::cout << n->rc << " ";
-//    }
-//    std::cout << std::endl;
+    /// Sort nodes with SOMTHING
+    /// TODO:
 
     /// Mark old & new nodes
     std::unordered_map<Node*, Node*> old_to_new;
