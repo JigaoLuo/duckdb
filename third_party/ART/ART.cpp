@@ -753,13 +753,13 @@ int main(int argc,char** argv) {
             }
         }
         std::cout << "node4_num:" << node4_num;
-        for (const auto& l : node4_levels) std::cout << "| [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        for (const auto& l : node4_levels) std::cout << " | [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
         std::cout << "node16_num:" << node16_num;
-        for (const auto& l : node16_levels) std::cout << "| [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        for (const auto& l : node16_levels) std::cout << "| [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
         std::cout << "node48_num:" << node48_num;
-        for (const auto& l : node48_levels) std::cout << "| [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        for (const auto& l : node48_levels) std::cout << "| [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
         std::cout << "node256_num:" << node256_num;
-        for (const auto& l : node256_levels) std::cout << " | [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        for (const auto& l : node256_levels) std::cout << " | [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
     }
 
 
