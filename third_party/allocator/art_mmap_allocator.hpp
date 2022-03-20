@@ -71,6 +71,9 @@ struct art_mmap_allocator {
 	}
 
  public:
+
+    size_t num_pages() { return allocated_pages.size(); }
+
     uint8_t* allocate_node4() {
 		if (num_free_bytes < sizeof(Node4)) {
             allocate_new_page();
