@@ -76,6 +76,7 @@ static inline unsigned ctz(uint16_t x) {
 void traversal(Node* n, std::vector<Node*>& res) {
     if (n == nullptr) return;
     if (isLeaf(n)) return;
+    /// Preorder
     res.push_back(n);
     switch (n->type) {
         case NodeType4: {
@@ -106,6 +107,47 @@ void traversal(Node* n, std::vector<Node*>& res) {
             for (unsigned i=0;i<256;i++) {
                 if (node->child[i] != 0) {
                     traversal(node->child[i], res);
+                }
+            }
+            return;
+        }
+    }
+}
+
+void traversal(Node* n, std::unordered_map<Node*, uint8_t>& res, uint8_t depth) {
+    if (n == nullptr) return;
+    if (isLeaf(n)) return;
+    /// Preorder
+    res.emplace(std::make_pair(n, depth));
+    switch (n->type) {
+        case NodeType4: {
+            Node4* node=static_cast<Node4*>(n);
+            for (unsigned i=0;i<node->count;i++) {
+                traversal(node->child[i], res, depth + 1);
+            }
+            return;
+        }
+        case NodeType16: {
+            Node16* node=static_cast<Node16*>(n);
+            for (unsigned i=0;i<node->count;i++) {
+                traversal(node->child[i], res, depth + 1);
+            }
+            return;
+        }
+        case NodeType48: {
+            Node48* node=static_cast<Node48*>(n);
+            for (unsigned i=0;i<256;i++) {
+                if (node->childIndex[i]!=emptyMarker) {
+                    traversal(node->child[node->childIndex[i]], res, depth + 1);
+                }
+            }
+            return;
+        }
+        case NodeType256: {
+            Node256* node=static_cast<Node256*>(n);
+            for (unsigned i=0;i<256;i++) {
+                if (node->child[i] != 0) {
+                    traversal(node->child[i], res, depth + 1);
                 }
             }
             return;
@@ -645,34 +687,81 @@ int main(int argc,char** argv) {
     /// Statistics of nodes
     std::cout << "Number of huge pages: " << art_allocator.num_pages() << std::endl;
 
-    size_t node4_num = 0;
-    size_t node16_num = 0;
-    size_t node48_num = 0;
-    size_t node256_num = 0;
-    for (const auto& n : res) {
-        switch (n->type) {
-            case NodeType4: {
-                ++node4_num;
-                break;
-            }
-            case NodeType16: {
-                ++node16_num;
-                break;
-            }
-            case NodeType48: {
-                ++node48_num;
-                break;
-            }
-            case NodeType256: {
-                ++node256_num;
-                break;
+    {
+        size_t node4_num = 0;
+        size_t node16_num = 0;
+        size_t node48_num = 0;
+        size_t node256_num = 0;
+        for (const auto& n : res) {
+            switch (n->type) {
+                case NodeType4: {
+                    ++node4_num;
+                    break;
+                }
+                case NodeType16: {
+                    ++node16_num;
+                    break;
+                }
+                case NodeType48: {
+                    ++node48_num;
+                    break;
+                }
+                case NodeType256: {
+                    ++node256_num;
+                    break;
+                }
             }
         }
+        std::cout << "node4_num:" << node4_num << std::endl;
+        std::cout << "node16_num:" << node16_num << std::endl;
+        std::cout << "node48_num:" << node48_num << std::endl;
+        std::cout << "node256_num:" << node256_num << std::endl;
     }
-    std::cout << "node4_num:" << node4_num << std::endl;
-    std::cout << "node16_num:" << node16_num << std::endl;
-    std::cout << "node48_num:" << node48_num << std::endl;
-    std::cout << "node256_num:" << node256_num << std::endl;
+
+    {
+        /// Collect all nodes
+        std::unordered_map<Node*, uint8_t> ht;
+        traversal(tree, ht, 0);
+        std::cout << "size: " << ht.size() << std::endl;
+
+        size_t node4_num = 0; std::map<uint8_t, int64_t> node4_levels;
+        size_t node16_num = 0; std::map<uint8_t, int64_t> node16_levels;
+        size_t node48_num = 0; std::map<uint8_t, int64_t> node48_levels;
+        size_t node256_num = 0; std::map<uint8_t, int64_t> node256_levels;
+        for (const auto& n : ht) {
+            switch (n.first->type) {
+                case NodeType4: {
+                    ++node4_num;
+                    ++node4_levels[n.second];
+                    break;
+                }
+                case NodeType16: {
+                    ++node16_num;
+                    ++node16_levels[n.second];
+                    break;
+                }
+                case NodeType48: {
+                    ++node48_num;
+                    ++node48_levels[n.second];
+                    break;
+                }
+                case NodeType256: {
+                    ++node256_num;
+                    ++node256_levels[n.second];
+                    break;
+                }
+            }
+        }
+        std::cout << "node4_num:" << node4_num;
+        for (const auto& l : node4_levels) std::cout << "| [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        std::cout << "node16_num:" << node16_num;
+        for (const auto& l : node16_levels) std::cout << "| [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        std::cout << "node48_num:" << node48_num;
+        for (const auto& l : node48_levels) std::cout << "| [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        std::cout << "node256_num:" << node256_num;
+        for (const auto& l : node256_levels) std::cout << " | [" << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+    }
+
 
     /// Sort nodes with SOMTHING
     /// TODO:
