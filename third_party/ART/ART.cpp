@@ -114,11 +114,11 @@ void traversal(Node* n, std::vector<Node*>& res) {
     }
 }
 
-void traversal(Node* n, std::unordered_map<Node*, uint8_t>& res, uint8_t depth) {
+void traversal(Node* n, std::vector<std::pair<Node*, uint8_t>>& res, uint8_t depth) {
     if (n == nullptr) return;
     if (isLeaf(n)) return;
     /// Preorder
-    res.emplace(std::make_pair(n, depth));
+    res.emplace_back(std::make_pair(n, depth));
     switch (n->type) {
         case NodeType4: {
             Node4* node=static_cast<Node4*>(n);
@@ -656,7 +656,7 @@ int main(int argc,char** argv) {
         double end = gettime();
         printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
         e_lookup.stopCounters();
-        e_lookup.printReport(std::cout, n); // use n as scale factor
+        e_lookup.printReport(std::cout, n*repeat); // use n as scale factor
         std::cout << std::endl;
 
         std::string output = "|";
@@ -667,7 +667,7 @@ int main(int argc,char** argv) {
         for (unsigned i = 0; i < e_lookup.events.size(); i++) {
             if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
                 e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-                output += std::to_string(e_lookup.events[i].readCounter() / n) + ",";
+                output += std::to_string(e_lookup.events[i].readCounter() / n*repeat) + ",";
             }
             if (e_lookup.names[i] == "dTLB-load-misses") {
                 tlb_miss = e_lookup.events[i].readCounter();
@@ -679,7 +679,7 @@ int main(int argc,char** argv) {
     }
 
 
-    /// Collect all nodes
+    /// Collect all nodes: Preorder Traversal
     std::vector<Node*> res;
     traversal(tree, res);
     std::cout << "size: " << res.size() << std::endl;
@@ -718,9 +718,9 @@ int main(int argc,char** argv) {
         std::cout << "node256_num:" << node256_num << std::endl;
     }
 
+    /// Collect all nodes: Preorder Traversal
+    std::vector<std::pair<Node*, uint8_t>> ht;
     {
-        /// Collect all nodes
-        std::unordered_map<Node*, uint8_t> ht;
         traversal(tree, ht, 0);
         std::cout << "size: " << ht.size() << std::endl;
 
@@ -765,6 +765,11 @@ int main(int argc,char** argv) {
 
     /// Sort nodes with SOMTHING
     /// TODO:
+
+//    for (const auto& n : res) {
+//        std::cout << int(n->type) <<  std::endl;
+//    }
+
 
     /// Mark old & new nodes
     std::unordered_map<Node*, Node*> old_to_new;
@@ -882,7 +887,7 @@ int main(int argc,char** argv) {
             double end = gettime();
             printf("lookup,%ld,%f\n", n, (n * repeat / 1000000.0) / (end - start));
             e_lookup.stopCounters();
-            e_lookup.printReport(std::cout, n); // use n as scale factor
+            e_lookup.printReport(std::cout, n*repeat); // use n as scale factor
             std::cout << std::endl;
 
             std::string output = "|";
@@ -893,7 +898,7 @@ int main(int argc,char** argv) {
             for (unsigned i = 0; i < e_lookup.events.size(); i++) {
                 if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
                     e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-                    output += std::to_string(e_lookup.events[i].readCounter() / n) + ",";
+                    output += std::to_string(e_lookup.events[i].readCounter() / n*repeat) + ",";
                 }
                 if (e_lookup.names[i] == "dTLB-load-misses") {
                     tlb_miss = e_lookup.events[i].readCounter();
