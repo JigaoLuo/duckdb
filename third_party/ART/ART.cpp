@@ -16,6 +16,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <queue>
 
 #include "ART_nodes.hpp"
 #include "../allocator/art_mmap_allocator.hpp"
@@ -114,6 +115,62 @@ void traversal(Node* n, std::vector<Node*>& res) {
     }
 }
 
+void level_order_traversal(Node* n, std::vector<Node*>& res) {
+    std::queue<Node*> q;
+    q.push(n);
+    /// Level-order
+    while (!q.empty()) {
+        const int level_size = q.size();
+        for (int i = 0; i < level_size; ++i) {
+            auto n = q.front();
+            q.pop();
+            switch (n->type) {
+                case NodeType4: {
+                    Node4* node=static_cast<Node4*>(n);
+                    for (unsigned i=0;i<node->count;i++) {
+                        if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                            q.push(node->child[i]);
+                        }
+                    }
+                    break;
+                }
+                case NodeType16: {
+                    Node16* node=static_cast<Node16*>(n);
+                    for (unsigned i=0;i<node->count;i++) {
+                        if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                            q.push(node->child[i]);
+                        }
+                    }
+                    break;
+                }
+                case NodeType48: {
+                    Node48* node=static_cast<Node48*>(n);
+                    for (unsigned i=0;i<256;i++) {
+                        if (node->childIndex[i]!=emptyMarker) {
+                            if (node->child[node->childIndex[i]] != nullptr && !isLeaf(node->child[node->childIndex[i]])) {
+                                q.push(node->child[node->childIndex[i]]);
+                            }
+                        }
+                    }
+                    break;
+                }
+                case NodeType256: {
+                    Node256* node=static_cast<Node256*>(n);
+                    for (unsigned i=0;i<256;i++) {
+                        if (node->child[i] != 0) {
+                            if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                                q.push(node->child[i]);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            res.push_back(n);
+        }
+    }
+}
+
 void traversal(Node* n, std::vector<std::pair<Node*, uint8_t>>& res, uint8_t depth) {
     if (n == nullptr) return;
     if (isLeaf(n)) return;
@@ -151,6 +208,131 @@ void traversal(Node* n, std::vector<std::pair<Node*, uint8_t>>& res, uint8_t dep
                 }
             }
             return;
+        }
+    }
+}
+
+void level_order_traversal(Node* n, std::vector<std::pair<Node*, uint8_t>>& res) {
+    std::queue<Node*> q;
+    q.push(n);
+    uint8_t depth = 0;
+    /// Level-order
+    while (!q.empty()) {
+        const int level_size = q.size();
+        for (int i = 0; i < level_size; ++i) {
+            auto n = q.front();
+            q.pop();
+            switch (n->type) {
+                case NodeType4: {
+                    Node4* node=static_cast<Node4*>(n);
+                    for (unsigned i=0;i<node->count;i++) {
+                        if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                            q.push(node->child[i]);
+                        }
+                    }
+                    break;
+                }
+                case NodeType16: {
+                    Node16* node=static_cast<Node16*>(n);
+                    for (unsigned i=0;i<node->count;i++) {
+                        if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                            q.push(node->child[i]);
+                        }
+                    }
+                    break;
+                }
+                case NodeType48: {
+                    Node48* node=static_cast<Node48*>(n);
+                    for (unsigned i=0;i<256;i++) {
+                        if (node->childIndex[i]!=emptyMarker) {
+                            if (node->child[node->childIndex[i]] != nullptr && !isLeaf(node->child[node->childIndex[i]])) {
+                                q.push(node->child[node->childIndex[i]]);
+                            }
+                        }
+                    }
+                    break;
+                }
+                case NodeType256: {
+                    Node256* node=static_cast<Node256*>(n);
+                    for (unsigned i=0;i<256;i++) {
+                        if (node->child[i] != 0) {
+                            if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                                q.push(node->child[i]);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            res.emplace_back(std::make_pair(n, depth));
+        }
+        ++depth;
+    }
+}
+
+void unknow(Node* n, std::vector<std::pair<Node*, uint8_t>>& res) {
+    std::queue<Node*> q;
+    q.push(n);
+    uint8_t depth = 0;
+    /// Level-order
+    while (!q.empty() && depth < 2) {
+        const int level_size = q.size();
+        for (int i = 0; i < level_size; ++i) {
+            auto n = q.front();
+            q.pop();
+            switch (n->type) {
+                case NodeType4: {
+                    Node4* node=static_cast<Node4*>(n);
+                    for (unsigned i=0;i<node->count;i++) {
+                        if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                            q.push(node->child[i]);
+                        }
+                    }
+                    break;
+                }
+                case NodeType16: {
+                    Node16* node=static_cast<Node16*>(n);
+                    for (unsigned i=0;i<node->count;i++) {
+                        if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                            q.push(node->child[i]);
+                        }
+                    }
+                    break;
+                }
+                case NodeType48: {
+                    Node48* node=static_cast<Node48*>(n);
+                    for (unsigned i=0;i<256;i++) {
+                        if (node->childIndex[i]!=emptyMarker) {
+                            if (node->child[node->childIndex[i]] != nullptr && !isLeaf(node->child[node->childIndex[i]])) {
+                                q.push(node->child[node->childIndex[i]]);
+                            }
+                        }
+                    }
+                    break;
+                }
+                case NodeType256: {
+                    Node256* node=static_cast<Node256*>(n);
+                    for (unsigned i=0;i<256;i++) {
+                        if (node->child[i] != 0) {
+                            if (node->child[i] != nullptr && !isLeaf(node->child[i])) {
+                                q.push(node->child[i]);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            res.emplace_back(std::make_pair(n, depth));
+        }
+        ++depth;
+    }
+
+    {
+        std::vector<std::pair<Node*, uint8_t>> copy = res;
+        for (const auto& i : copy) {
+            if (i.second == 1) {
+                traversal(i.first, res, 1);
+            }
         }
     }
 }
@@ -636,7 +818,7 @@ int main(int argc,char** argv) {
 //    }
 
 
-    int iteration = 1;
+    int iteration = 10;
     for (int i = 0; i < iteration; ++i) {
         // Repeat lookup for small trees to get reproducable results
         uint64_t repeat = 10000000 / n;
@@ -667,7 +849,7 @@ int main(int argc,char** argv) {
         for (unsigned i = 0; i < e_lookup.events.size(); i++) {
             if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
                 e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-                output += std::to_string(e_lookup.events[i].readCounter() / n*repeat) + ",";
+                output += std::to_string(e_lookup.events[i].readCounter() / (n*repeat)) + ",";
             }
             if (e_lookup.names[i] == "dTLB-load-misses") {
                 tlb_miss = e_lookup.events[i].readCounter();
@@ -765,6 +947,10 @@ int main(int argc,char** argv) {
 
     /// Sort nodes with SOMTHING
     /// TODO:
+
+        for (const auto& n : ht) {
+            std::cout << int(n.first->type) << " " << int(n.second) <<  std::endl;
+        }
 
 //    for (const auto& n : res) {
 //        std::cout << int(n->type) <<  std::endl;
@@ -867,7 +1053,7 @@ int main(int argc,char** argv) {
     /// Now lookup
     Node* new_root = old_to_new[tree];
     {
-        int iteration = 5;
+        int iteration = 10;
         for (int i = 0; i < iteration; ++i) {
             // Repeat lookup for small trees to get reproducable results
             uint64_t repeat = 10000000 / n;
@@ -898,7 +1084,7 @@ int main(int argc,char** argv) {
             for (unsigned i = 0; i < e_lookup.events.size(); i++) {
                 if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
                     e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
-                    output += std::to_string(e_lookup.events[i].readCounter() / n*repeat) + ",";
+                    output += std::to_string(e_lookup.events[i].readCounter() / (n*repeat)) + ",";
                 }
                 if (e_lookup.names[i] == "dTLB-load-misses") {
                     tlb_miss = e_lookup.events[i].readCounter();
