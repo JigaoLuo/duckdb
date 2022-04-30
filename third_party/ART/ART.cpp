@@ -17,6 +17,7 @@
 #include <set>
 #include <unordered_map>
 #include <queue>
+#include <limits>
 
 #include "ART_nodes.hpp"
 #include "../allocator/art_mmap_allocator.hpp"
@@ -175,6 +176,7 @@ void traversal(Node* n, std::vector<std::pair<Node*, uint8_t>>& res, uint8_t dep
     if (n == nullptr) return;
     if (isLeaf(n)) return;
     /// Preorder
+    if (depth != 1)
     res.emplace_back(std::make_pair(n, depth));
     switch (n->type) {
         case NodeType4: {
@@ -747,10 +749,60 @@ int main(int argc,char** argv) {
    if (atoi(argv[2])==1)
       // dense, random
       std::random_shuffle(keys,keys+n);
-   if (atoi(argv[2])==2)
-      // "pseudo-sparse" (the most-significant leaf bit gets lost)
-      for (uint64_t i=0;i<n;i++)
-         keys[i]=(static_cast<uint64_t>(rand())<<32) | static_cast<uint64_t>(rand());
+//   if (atoi(argv[2])==2) {
+//       // "pseudo-sparse" (the most-significant leaf bit gets lost)
+//       std::unordered_set<uint64_t> unique;
+//       uint64_t ite=0;
+//       for (uint64_t i=0;i<n;i++) {
+//           while (true) {
+//               uint64_t num =(static_cast<uint64_t>(rand())<<32) | static_cast<uint64_t>(rand());
+//               num &= ((std::numeric_limits<uint64_t>::max() << 32) >> 32);
+//               std::uint64_t old = num;
+//               std::uint8_t* temp = (std::uint8_t*)&old;
+//               temp[3] = ite % 4;
+//               temp[2] = ite % 16;
+//               temp[1] = ite % 200;
+//               num = old;
+//               ++ite;
+//
+//               if (unique.find(num) == unique.end()) {
+//                   keys[i] = num;
+//                   unique.emplace(num);
+//                   break;
+//               }
+//           }
+//       }
+//   }
+    if (atoi(argv[2])==2) {
+        // "pseudo-sparse" (the most-significant leaf bit gets lost)
+        std::unordered_set<uint64_t> unique;
+        uint64_t i=0;
+        uint64_t num=0;
+        while (num < n) {
+            std::uint64_t old = 0;
+            std::uint8_t* temp = (std::uint8_t*)&old;
+            for (size_t f = 0; f < 4; ++f) {
+                temp[3] = f;
+                for (size_t s = 0; s < 16; ++s) {
+                    temp[2] = s;
+                    for (size_t c = 0; c < 40; ++c) {
+                        temp[1] = c;
+                        for (size_t ii = 0; ii < 200; ++ii) {
+                            temp[0] = ii;
+                            if (num >= n) goto here;
+                            keys[num++] = old;
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+    here:
+
+    std::unordered_set<uint64_t> uni(keys, keys + n);
+    std::cout << n << " " << uni.size() << std::endl;
+
 
    const double alpha = atof(argv[4]);
 
@@ -832,7 +884,7 @@ int main(int argc,char** argv) {
                 uint8_t key[8];
                 loadKey(lookup_keys[i], key);
                 Node *leaf = lookup(tree, key, 8, 0, 8);
-                assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
+//                assert(isLeaf(leaf) && getLeafValue(leaf) == lookup_keys[i]);
             }
         }
         double end = gettime();
@@ -863,13 +915,112 @@ int main(int argc,char** argv) {
 
     /// Collect all nodes: Preorder Traversal
     std::vector<Node*> res;
-    traversal(tree, res);
-    std::random_shuffle(res.begin(), res.end());
+    traversal(tree, res); /// Preorder
+//    level_order_traversal(tree, res);  /// Level Order
+//    std::srand(std::time(nullptr)); // use current time as seed for random generator
+    std::random_shuffle(res.begin(), res.end(), [](int i) { return std::rand() % i;});
+
+    std::cout << "size: " << res.size() << std::endl;
+
+    /// Statistics of nodes
+    std::cout << "Number of huge pages: " << art_allocator.num_pages() << std::endl;
+
+    {
+        size_t node4_num = 0;
+        size_t node16_num = 0;
+        size_t node48_num = 0;
+        size_t node256_num = 0;
+        for (const auto& n : res) {
+            switch (n->type) {
+                case NodeType4: {
+                    ++node4_num;
+                    break;
+                }
+                case NodeType16: {
+                    ++node16_num;
+                    break;
+                }
+                case NodeType48: {
+                    ++node48_num;
+                    break;
+                }
+                case NodeType256: {
+                    ++node256_num;
+                    break;
+                }
+            }
+        }
+        std::cout << "node4_num:" << node4_num << std::endl;
+        std::cout << "node16_num:" << node16_num << std::endl;
+        std::cout << "node48_num:" << node48_num << std::endl;
+        std::cout << "node256_num:" << node256_num << std::endl;
+    }
+
+    /// Collect all nodes: Preorder Traversal
+    std::vector<std::pair<Node*, uint8_t>> ht;
+    {
+//        traversal(tree, ht, 0); /// Preorder
+//        level_order_traversal(tree, ht); /// Level Order
+        unknow(tree, ht);
+        std::cout << "size: " << ht.size() << std::endl;
+
+        size_t node4_num = 0; std::map<uint8_t, int64_t> node4_levels;
+        size_t node16_num = 0; std::map<uint8_t, int64_t> node16_levels;
+        size_t node48_num = 0; std::map<uint8_t, int64_t> node48_levels;
+        size_t node256_num = 0; std::map<uint8_t, int64_t> node256_levels;
+        for (const auto& n : ht) {
+            switch (n.first->type) {
+                case NodeType4: {
+                    ++node4_num;
+                    ++node4_levels[n.second];
+                    break;
+                }
+                case NodeType16: {
+                    ++node16_num;
+                    ++node16_levels[n.second];
+                    break;
+                }
+                case NodeType48: {
+                    ++node48_num;
+                    ++node48_levels[n.second];
+                    break;
+                }
+                case NodeType256: {
+                    ++node256_num;
+                    ++node256_levels[n.second];
+                    break;
+                }
+            }
+        }
+        std::cout << "node4_num:" << node4_num;
+        for (const auto& l : node4_levels) std::cout << " | [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        std::cout << "node16_num:" << node16_num;
+        for (const auto& l : node16_levels) std::cout << "| [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        std::cout << "node48_num:" << node48_num;
+        for (const auto& l : node48_levels) std::cout << "| [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+        std::cout << "node256_num:" << node256_num;
+        for (const auto& l : node256_levels) std::cout << " | [Level " << int(l.first) << "]: " << l.second << " | "; std::cout << std::endl;
+    }
+
+    /// Sort nodes with SOMTHING
+    /// TODO:
+
+//    for (const auto& n : ht) {
+//        std::cout << int(n.first->type) << " " << int(n.second) <<  std::endl;
+//    }
+
+//    for (const auto& n : res) {
+//        std::cout << int(n->type) <<  std::endl;
+//    }
+
+
 
     /// Mark old & new nodes
     std::unordered_map<Node*, Node*> old_to_new;
     std::vector<Node*> new_nodes;
-    for (const auto& n : res) {
+//    for (const auto& n : res) {
+    for (const auto& nn : ht) {
+        auto n = nn.first;
         switch (n->type) {
             case NodeType4: {
                 Node4* node=static_cast<Node4*>(n);
@@ -989,18 +1140,18 @@ int main(int argc,char** argv) {
             output += std::to_string(alpha) + ",";
             const double throughput = (n * repeat / 1000000.0) / (end - start);
             output += std::to_string(throughput) + ",";
-            double tlb_miss = 0;
+//            double tlb_miss = 0;
             for (unsigned i = 0; i < e_lookup.events.size(); i++) {
                 if (e_lookup.names[i] == "cycles" || e_lookup.names[i] == "L1-misses" ||
                     e_lookup.names[i] == "LLC-misses" || e_lookup.names[i] == "dTLB-load-misses") {
                     output += std::to_string(e_lookup.events[i].readCounter() / (n*repeat)) + ",";
                 }
-                if (e_lookup.names[i] == "dTLB-load-misses") {
-                    tlb_miss = e_lookup.events[i].readCounter();
-                }
+//                if (e_lookup.names[i] == "dTLB-load-misses") {
+//                    tlb_miss = e_lookup.events[i].readCounter();
+//                }
             }
-            output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
-            output.pop_back();
+//            output += std::to_string(100.0 * tlb_miss / ((end - start) * 1000000000.0)) + ",";
+//            output.pop_back();
             std::cout << output << std::endl;
         }
     }
