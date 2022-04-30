@@ -1,0 +1,416 @@
+insert,1000000,42.793780
+lookup indexes as set: #=631865
+lookup,1000000,27.597319
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+128.42,       137.44,      3.30,       2.01,             0.31,              0.00,          0.00,      36.23, 10000000, 1.07, 1.00, 3.54 
+
+leafoutput 10000000
+|0.000000,27.597319,128.424039,3.303296,2.006740,0.305289,0.842515
+lookup,1000000,27.475545
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+129.01,       138.61,      3.32,       2.08,             0.30,              0.00,          0.00,      36.39, 10000000, 1.07, 1.00, 3.54 
+
+leafoutput 10000000
+|0.000000,27.475545,129.007295,3.320480,2.084831,0.295652,0.812319
+lookup,1000000,26.811800
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+131.28,       139.10,      3.32,       2.19,             0.30,              0.00,          0.00,      37.29, 10000000, 1.06, 1.00, 3.52 
+
+leafoutput 10000000
+|0.000000,26.811800,131.276519,3.320726,2.193036,0.302076,0.809920
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,32.338504
+lookup indexes as set: #=622107
+lookup,1000000,22.714100
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+152.11,       137.08,      3.37,       2.66,             0.30,              0.00,          0.00,      43.93, 10000000, 0.90, 1.00, 3.46 
+
+leafoutput 10000000
+|0.200000,22.714100,152.107013,3.365577,2.657462,0.302634,0.687405
+lookup,1000000,26.067526
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+133.51,       138.21,      3.29,       2.28,             0.30,              0.00,          0.00,      38.34, 10000000, 1.04, 1.00, 3.48 
+
+leafoutput 10000000
+|0.200000,26.067526,133.509426,3.287576,2.278825,0.298230,0.777412
+lookup,1000000,26.323065
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+132.26,       139.55,      3.27,       2.25,             0.30,              0.00,          0.00,      37.99, 10000000, 1.06, 1.00, 3.48 
+
+leafoutput 10000000
+|0.200000,26.323065,132.256287,3.270273,2.248716,0.303541,0.799013
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,42.136870
+lookup indexes as set: #=587566
+lookup,1000000,23.724459
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+145.91,       139.19,      3.31,       2.41,             0.30,              0.00,          0.00,      42.15, 10000000, 0.95, 1.00, 3.46 
+
+leafoutput 10000000
+|0.400000,23.724459,145.913315,3.309503,2.407268,0.301155,0.714474
+lookup,1000000,25.498110
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+133.91,       141.82,      3.39,       2.34,             0.30,              0.00,          0.00,      39.21, 10000000, 1.06, 1.00, 3.41 
+
+leafoutput 10000000
+|0.400000,25.498110,133.910183,3.388527,2.343991,0.296788,0.756754
+lookup,1000000,26.303751
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+129.67,       139.65,      3.39,       2.15,             0.30,              0.00,          0.00,      38.02, 10000000, 1.08, 1.00, 3.41 
+
+leafoutput 10000000
+|0.400000,26.303751,129.674708,3.387296,2.145233,0.302097,0.794628
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,35.375865
+lookup indexes as set: #=515561
+lookup,1000000,23.922068
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+146.80,       139.90,      3.34,       2.67,             0.29,              0.00,          0.00,      41.75, 10000000, 0.95, 1.00, 3.52 
+
+leafoutput 10000000
+|0.600000,23.922068,146.803005,3.344077,2.666752,0.293060,0.701061
+lookup,1000000,26.575798
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+131.38,       139.13,      3.32,       2.26,             0.30,              0.00,          0.00,      37.63, 10000000, 1.06, 1.00, 3.49 
+
+leafoutput 10000000
+|0.600000,26.575798,131.380452,3.316762,2.264836,0.298554,0.793431
+lookup,1000000,26.282241
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+132.52,       139.86,      3.29,       2.34,             0.29,              0.00,          0.00,      38.03, 10000000, 1.06, 1.00, 3.48 
+
+leafoutput 10000000
+|0.600000,26.282241,132.518066,3.286146,2.344386,0.294389,0.773720
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,40.502371
+lookup indexes as set: #=390469
+lookup,1000000,32.278700
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+108.87,       137.20,      3.17,       1.58,             0.26,              0.00,          0.00,      30.91, 10000000, 1.26, 1.00, 3.52 
+
+leafoutput 10000000
+|0.800000,32.278700,108.872148,3.169618,1.578864,0.264654,0.854268
+lookup,1000000,30.530807
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+113.05,       139.69,      3.18,       1.78,             0.26,              0.00,          0.00,      32.68, 10000000, 1.24, 1.00, 3.46 
+
+leafoutput 10000000
+|0.800000,30.530807,113.049804,3.178218,1.777516,0.262844,0.802483
+lookup,1000000,30.107508
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+113.29,       140.51,      3.21,       1.76,             0.27,              0.00,          0.00,      33.21, 10000000, 1.24, 1.00, 3.41 
+
+leafoutput 10000000
+|0.800000,30.107508,113.292437,3.209745,1.760369,0.266625,0.802743
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,15.846878
+lookup indexes as set: #=217524
+lookup,1000000,24.978019
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+134.13,       138.62,      2.54,       1.79,             0.19,              0.00,          0.00,      39.84, 10000000, 1.03, 1.00, 3.37 
+
+leafoutput 10000000
+|1.000000,24.978019,134.127411,2.543328,1.794726,0.193195,0.482564
+lookup,1000000,34.643914
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 94.68,       137.37,      2.46,       1.37,             0.17,              0.00,          0.00,      28.86, 10000000, 1.45, 1.00, 3.28 
+
+leafoutput 10000000
+|1.000000,34.643914,94.678361,2.459123,1.369362,0.173428,0.600821
+lookup,1000000,25.013561
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+132.26,       140.56,      2.51,       2.09,             0.18,              0.00,          0.00,      39.98, 10000000, 1.06, 1.00, 3.31 
+
+leafoutput 10000000
+|1.000000,25.013561,132.256984,2.508534,2.087232,0.182981,0.457701
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,38.302747
+lookup indexes as set: #=80042
+lookup,1000000,46.484429
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 68.96,       138.02,      1.35,       0.85,             0.07,              0.00,          0.00,      21.51, 10000000, 2.00, 1.00, 3.21 
+
+leafoutput 10000000
+|1.200000,46.484429,68.956139,1.352715,0.846593,0.073232,0.340416
+lookup,1000000,47.199879
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 67.75,       139.29,      1.35,       0.84,             0.07,              0.00,          0.00,      21.19, 10000000, 2.06, 1.00, 3.20 
+
+leafoutput 10000000
+|1.200000,47.199879,67.751643,1.345581,0.838566,0.071427,0.337135
+lookup,1000000,48.079471
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 66.63,       138.75,      1.34,       0.75,             0.07,              0.00,          0.00,      20.80, 10000000, 2.08, 1.00, 3.20 
+
+leafoutput 10000000
+|1.200000,48.079471,66.634277,1.343490,0.752818,0.071479,0.343665
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,37.187173
+lookup indexes as set: #=23949
+lookup,1000000,60.106590
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 50.77,       137.24,      0.64,       0.49,             0.03,              0.00,          0.00,      16.64, 10000000, 2.70, 1.00, 3.05 
+
+leafoutput 10000000
+|1.400000,60.106590,50.774373,0.643825,0.494593,0.025239,0.151701
+lookup,1000000,57.656833
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 52.72,       137.62,      0.64,       0.55,             0.03,              0.00,          0.00,      17.34, 10000000, 2.61, 1.00, 3.04 
+
+leafoutput 10000000
+|1.400000,57.656833,52.717389,0.641351,0.547742,0.026078,0.150359
+lookup,1000000,59.387366
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 51.25,       140.24,      0.65,       0.51,             0.03,              0.00,          0.00,      16.84, 10000000, 2.74, 1.00, 3.04 
+
+leafoutput 10000000
+|1.400000,59.387366,51.247797,0.649534,0.509475,0.025479,0.151314
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,36.226499
+lookup indexes as set: #=7777
+lookup,1000000,69.775865
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 42.33,       139.25,      0.34,       0.33,             0.01,              0.00,          0.00,      14.32, 10000000, 3.29, 1.00, 2.96 
+
+leafoutput 10000000
+|1.600000,69.775865,42.332300,0.341573,0.328939,0.009525,0.066463
+lookup,1000000,65.952635
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 44.65,       138.51,      0.35,       0.35,             0.01,              0.00,          0.00,      15.16, 10000000, 3.10, 1.00, 2.95 
+
+leafoutput 10000000
+|1.600000,65.952635,44.651966,0.348276,0.353209,0.009593,0.063270
+lookup,1000000,69.569625
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 42.15,       140.07,      0.34,       0.33,             0.01,              0.00,          0.00,      14.37, 10000000, 3.32, 1.00, 2.93 
+
+leafoutput 10000000
+|1.600000,69.569625,42.153387,0.341915,0.331331,0.008911,0.061990
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,36.714525
+lookup indexes as set: #=3121
+lookup,1000000,72.457503
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 40.14,       138.53,      0.23,       0.28,             0.01,              0.00,          0.00,      13.79, 10000000, 3.45, 1.00, 2.91 
+
+leafoutput 10000000
+|1.800000,72.457503,40.142728,0.228355,0.276620,0.005260,0.038110
+lookup,1000000,73.003328
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 40.01,       137.95,      0.23,       0.27,             0.01,              0.00,          0.00,      13.70, 10000000, 3.45, 1.00, 2.92 
+
+leafoutput 10000000
+|1.800000,73.003328,40.008192,0.230212,0.266005,0.005350,0.039056
+lookup,1000000,70.972733
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 41.34,       138.23,      0.23,       0.28,             0.01,              0.00,          0.00,      14.08, 10000000, 3.34, 1.00, 2.94 
+
+leafoutput 10000000
+|1.800000,70.972733,41.342640,0.232044,0.279755,0.005315,0.037725
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,36.459210
+lookup indexes as set: #=1418
+lookup,1000000,71.911395
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 39.90,       138.38,      0.18,       0.25,             0.00,              0.00,          0.00,      13.90, 10000000, 3.47, 1.00, 2.87 
+
+leafoutput 10000000
+|2.000000,71.911395,39.897669,0.181589,0.252065,0.003424,0.024623
+lookup,1000000,73.428406
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 39.41,       137.09,      0.18,       0.25,             0.00,              0.00,          0.00,      13.62, 10000000, 3.48, 1.00, 2.89 
+
+leafoutput 10000000
+|2.000000,73.428406,39.407284,0.180200,0.252715,0.003276,0.024057
+lookup,1000000,74.263860
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.83,       138.52,      0.18,       0.25,             0.00,              0.00,          0.00,      13.46, 10000000, 3.57, 1.00, 2.88 
+
+leafoutput 10000000
+|2.000000,74.263860,38.831762,0.180509,0.247483,0.003181,0.023623
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,41.220040
+lookup indexes as set: #=726
+lookup,1000000,73.082830
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.38,       139.46,      0.16,       0.24,             0.00,              0.00,          0.00,      13.68, 10000000, 3.63, 1.00, 2.81 
+
+leafoutput 10000000
+|2.200000,73.082830,38.384054,0.158032,0.240557,0.002422,0.017697
+lookup,1000000,73.450523
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 37.98,       138.47,      0.16,       0.23,             0.00,              0.00,          0.00,      13.61, 10000000, 3.65, 1.00, 2.79 
+
+leafoutput 10000000
+|2.200000,73.450523,37.979596,0.158593,0.230168,0.002358,0.017319
+lookup,1000000,71.980134
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.59,       139.17,      0.16,       0.24,             0.00,              0.00,          0.00,      13.87, 10000000, 3.61, 1.00, 2.78 
+
+leafoutput 10000000
+|2.200000,71.980134,38.594281,0.159497,0.235646,0.002582,0.018584
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,35.595024
+lookup indexes as set: #=435
+lookup,1000000,71.609614
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.90,       139.07,      0.15,       0.22,             0.00,              0.00,          0.00,      13.94, 10000000, 3.58, 1.00, 2.79 
+
+leafoutput 10000000
+|2.400000,71.609614,38.897535,0.150335,0.223554,0.002232,0.015984
+lookup,1000000,67.465080
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 41.67,       137.71,      0.16,       0.23,             0.00,              0.00,          0.00,      14.82, 10000000, 3.31, 1.00, 2.81 
+
+leafoutput 10000000
+|2.400000,67.465080,41.666174,0.156075,0.229011,0.002709,0.018275
+lookup,1000000,73.607784
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.11,       139.12,      0.15,       0.22,             0.00,              0.00,          0.00,      13.59, 10000000, 3.65, 1.00, 2.81 
+
+leafoutput 10000000
+|2.400000,73.607784,38.111964,0.148729,0.221501,0.002338,0.017207
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,39.388684
+lookup indexes as set: #=271
+lookup,1000000,75.634370
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.07,       139.59,      0.14,       0.22,             0.00,              0.00,          0.00,      13.20, 10000000, 3.67, 1.00, 2.88 
+
+leafoutput 10000000
+|2.600000,75.634370,38.074348,0.141913,0.221082,0.002140,0.016187
+lookup,1000000,74.441798
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.26,       139.17,      0.14,       0.22,             0.00,              0.00,          0.00,      13.39, 10000000, 3.64, 1.00, 2.86 
+
+leafoutput 10000000
+|2.600000,74.441798,38.261815,0.143290,0.222920,0.002251,0.016756
+lookup,1000000,75.294388
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 37.98,       138.96,      0.14,       0.22,             0.00,              0.00,          0.00,      13.26, 10000000, 3.66, 1.00, 2.86 
+
+leafoutput 10000000
+|2.600000,75.294388,37.976039,0.142058,0.220641,0.002086,0.015709
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,33.333365
+lookup indexes as set: #=167
+lookup,1000000,75.945795
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.11,       140.74,      0.14,       0.22,             0.00,              0.00,          0.00,      13.17, 10000000, 3.69, 1.00, 2.89 
+
+leafoutput 10000000
+|2.800000,75.945795,38.114806,0.138414,0.215590,0.001903,0.014452
+lookup,1000000,74.655788
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.28,       138.40,      0.14,       0.22,             0.00,              0.00,          0.00,      13.39, 10000000, 3.62, 1.00, 2.86 
+
+leafoutput 10000000
+|2.800000,74.655788,38.284536,0.138667,0.222788,0.002066,0.015424
+lookup,1000000,76.783738
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 37.93,       139.62,      0.14,       0.21,             0.00,              0.00,          0.00,      13.02, 10000000, 3.68, 1.00, 2.91 
+
+leafoutput 10000000
+|2.800000,76.783738,37.932949,0.138055,0.213457,0.002078,0.015952
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
+insert,1000000,36.769885
+lookup indexes as set: #=129
+lookup,1000000,76.798500
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 37.62,       138.14,      0.14,       0.22,             0.00,              0.00,          0.00,      13.00, 10000000, 3.67, 1.00, 2.89 
+
+leafoutput 10000000
+|3.000000,76.798500,37.619416,0.135760,0.216853,0.001979,0.015195
+lookup,1000000,75.585166
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 37.72,       139.59,      0.14,       0.21,             0.00,              0.00,          0.00,      13.23, 10000000, 3.70, 1.00, 2.85 
+
+leafoutput 10000000
+|3.000000,75.585166,37.715931,0.135267,0.213786,0.001999,0.015110
+lookup,1000000,74.375532
+cycles, instructions, L1-misses, LLC-misses, dTLB-load-misses, dTLB-store-misses, branch-misses, task-clock,    scale,  IPC, CPUs,  GHz 
+ 38.53,       139.20,      0.14,       0.22,             0.00,              0.00,          0.00,      13.44, 10000000, 3.61, 1.00, 2.87 
+
+leafoutput 10000000
+|3.000000,74.375532,38.526596,0.136756,0.217864,0.001954,0.014531
+size: 3924
+node4_num:0
+node16_num:1
+node48_num:0
+node256_num:3923
+================================================================================
